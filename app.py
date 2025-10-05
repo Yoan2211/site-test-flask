@@ -11,14 +11,10 @@ To DO :
 5) Change Webhook in Mollie
 6) Change Webhook in Strava
 """
-from tkinter.tix import Form
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
+from flask import render_template, request, redirect, url_for, session, flash
 import os
 import uuid
 import json
-import io
-import base64
-from urllib.parse import urljoin
 import time
 from datetime import timedelta
 from datetime import datetime
@@ -32,13 +28,10 @@ from services.googledrive import upload_to_google_drive_cmdFile
 from services.strava_service import StravaService
 
 import polyline
-import matplotlib.pyplot as plt
 
 # Mollie SDK
 from mollie.api.client import Client
 from models.db_database import db, User, BillingInfo, Order, OrderPhoto
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 
