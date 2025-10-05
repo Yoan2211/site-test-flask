@@ -1,0 +1,60 @@
+/* ---- Menu mobile ---- */
+.menu-toggle {
+    display: block;
+    color: #ff6600;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+nav ul {
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+    nav ul.show {
+        display: flex;
+    }
+
+/* ---- Formulaires et cartes ---- */
+.container, .product-page, .form-box, .product-info, .account-card {
+    flex-direction: column;
+    padding: 1rem;
+    width: 100%;
+}
+
+input, select, textarea, button {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.8rem;
+}
+
+/* ---- Titres et boutons ---- */
+h1, h2 {
+    font-size: 1.5rem;
+}
+
+.product-info h2, .form-box h2 {
+    font-size: 1.3rem;
+}
+
+button {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1rem;
+}
+
+/* ---- Images ---- */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ---- Pied de page et flash messages ---- */
+footer {
+    font-size: 0.9rem;
+}
+
+.flash-messages {
+    font-size: 0.9rem;
+}

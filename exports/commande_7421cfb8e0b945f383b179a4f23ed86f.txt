@@ -1,0 +1,144 @@
+{
+    "resource": "order",
+    "id": "ord_6ptqrSVr2mqCCBq5J95FJ",
+    "profileId": "pfl_LsQMRVTr8m",
+    "method": "twint",
+    "amount": {
+        "value": "24.90",
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "isCancelable": false,
+    "metadata": {
+        "order_id": "7421cfb8e0b945f383b179a4f23ed86f",
+        "items": [
+            {
+                "color": "blanc",
+                "id": "d6af85d63a544c79be1b03cd81c8d2e0",
+                "image": "img/gobelet.jpg",
+                "name": "Gobelet personnalisé",
+                "options": {
+                    "add_results": true,
+                    "add_route": true,
+                    "from_strava": true,
+                    "results": {
+                        "distance": 4.02,
+                        "pace": "5:06",
+                        "time": "20:31"
+                    },
+                    "route_local": "static\\imported_images/track_15885960417.png",
+                    "route_url": "/static/imported_images/track_15885960417.png"
+                },
+                "qty": 1,
+                "sku": "gobelet",
+                "total": 24.9,
+                "unit_price": 24.9
+            }
+        ],
+        "total": 24.9,
+        "currency": "CHF"
+    },
+    "createdAt": "2025-10-03T14:55:57+00:00",
+    "mode": "test",
+    "locale": "fr_CH",
+    "billingAddress": {
+        "streetAndNumber": "Chemin du colonel 4",
+        "postalCode": "1433",
+        "city": "SUCHY",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoanauberson@gmail.com"
+    },
+    "shopperCountryMustMatchBillingCountry": false,
+    "orderNumber": "7421cfb8e0b945f383b179a4f23ed86f",
+    "shippingAddress": {
+        "streetAndNumber": "Chemin du colonel 4",
+        "postalCode": "1433",
+        "city": "SUCHY",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoanauberson@gmail.com"
+    },
+    "amountCaptured": {
+        "value": "24.90",
+        "currency": "CHF"
+    },
+    "paidAt": "2025-10-03T14:56:00+00:00",
+    "redirectUrl": "http://692bf5491653.ngrok-free.app/payment/success",
+    "webhookUrl": "https://692bf5491653.ngrok-free.app/webhook",
+    "lines": [
+        {
+            "resource": "orderline",
+            "id": "odl_rLSYPeHooBMnRoq5J95FJ",
+            "orderId": "ord_6ptqrSVr2mqCCBq5J95FJ",
+            "name": "Gobelet personnalisé",
+            "sku": "gobelet",
+            "type": "physical",
+            "status": "paid",
+            "metadata": {
+                "add_results": true,
+                "add_route": true,
+                "from_strava": true,
+                "results": {
+                    "distance": 4.02,
+                    "pace": "5:06",
+                    "time": "20:31"
+                },
+                "route_local": "static\\imported_images/track_15885960417.png",
+                "route_url": "/static/imported_images/track_15885960417.png"
+            },
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "24.90",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "24.90",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-10-03T14:55:57+00:00"
+        }
+    ],
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/orders/ord_6ptqrSVr2mqCCBq5J95FJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19340621/orders/ord_6ptqrSVr2mqCCBq5J95FJ",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-order",
+            "type": "text/html"
+        }
+    }
+}

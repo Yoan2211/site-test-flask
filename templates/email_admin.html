@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h2 {
+            color: #c0392b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f9e79f;
+        }
+    </style>
+</head>
+<body>
+    <h2>Nouvelle commande reçue 🚀</h2>
+    <p><strong>ID commande :</strong> {{ order.id }}</p>
+    <p><strong>Montant total :</strong> {{ '%.2f'|format(order.total) }} {{ order.currency }}</p>
+
+    <h3>👤 Détails de facturation</h3>
+    <table>
+        {% if order.billingAddress %}
+        <tr><th>Prénom</th><td>{{ order.billingAddress.givenName }}</td></tr>
+        <tr><th>Nom</th><td>{{ order.billingAddress.familyName }}</td></tr>
+        <tr><th>Email</th><td>{{ order.billingAddress.email }}</td></tr>
+        <tr><th>Adresse</th><td>{{ order.billingAddress.streetAndNumber }}</td></tr>
+        <tr><th>Code postal</th><td>{{ order.billingAddress.postalCode }}</td></tr>
+        <tr><th>Ville</th><td>{{ order.billingAddress.city }}</td></tr>
+        <tr><th>Pays</th><td>{{ order.billingAddress.country }}</td></tr>
+        {% else %}
+        <tr><td colspan="2">Pas de données de facturation trouvées.</td></tr>
+        {% endif %}
+    </table>
+
+    <h3>📦 Articles commandés</h3>
+    <table>
+        <tr>
+            <th>Article</th>
+            <th>Couleur</th>
+            <th>Qté</th>
+            <th>Prix unitaire</th>
+            <th>Total</th>
+            <th>Options</th>
+        </tr>
+        {% for it in order.line_items %}
+        <tr>
+            <td>{{ it.name }}</td>
+            <td>{{ it.color }}</td>
+            <td>{{ it.qty }}</td>
+            <td>{{ '%.2f'|format(it.unit_price) }} {{ order.currency }}</td>
+            <td>{{ '%.2f'|format(it.total) }} {{ order.currency }}</td>
+            <td>
+                {% if it.options.add_results %}Résultats : {{ it.options.results.time }} / {{ it.options.results.distance }} km ({{ it.options.results.pace }}/km)<br>{% endif %}
+                {% if it.options.add_route %}Tracé fourni ✅{% else %}Pas de tracé{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <p>Email automatique — les fichiers sont en pièce jointe (.txt).<br>StravaCup</p>
+</body>
+</html>

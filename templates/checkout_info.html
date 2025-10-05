@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Informations de facturation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-box">
+        <h2>Informations de facturation</h2>
+        <p>Merci de renseigner vos coordonnées de facturation avant de procéder au paiement.</p>
+
+        <form method="POST">
+            <!-- Prénom -->
+            <label>Prénom</label>
+            <input name="billing_firstname"
+                   pattern="^[A-Za-zÀ-ÿ\s'-]{2,50}$"
+                   required
+                   title="Veuillez entrer entre 2 et 50 lettres."
+                   type="text"
+                   value="{{ billing_data.billing_firstname if billing_data else (user.first_name if user else '') }}">
+
+            <!-- Nom -->
+            <label>Nom</label>
+            <input name="billing_lastname"
+                   pattern="^[A-Za-zÀ-ÿ\s'-]{2,50}$"
+                   required
+                   title="Veuillez entrer entre 2 et 50 lettres."
+                   type="text"
+                   value="{{ billing_data.billing_lastname if billing_data else (user.last_name if user else '') }}">
+
+            <!-- Email -->
+            <label>Email</label>
+
+            {% if user %}
+            <!-- Utilisateur connecté : readonly + hidden pour POST -->
+            <input type="email"
+                   value="{{ user.email }}"
+                   readonly
+                   style="background:#f0f0f0; cursor:not-allowed;">
+            <input type="hidden" name="billing_email" value="{{ user.email }}">
+            {% else %}
+            <!-- Guest : email modifiable -->
+            <input type="email"
+                   name="billing_email"
+                   required
+                   value="{{ billing_data.billing_email if billing_data else '' }}">
+            {% endif %}
+
+
+
+            <!-- Rue et numéro -->
+            <label>Rue et numéro</label>
+            <input name="billing_address"
+                   pattern="^[0-9A-Za-zÀ-ÿ\s.'-]{5,100}$"
+                   required
+                   title="Adresse invalide (5 à 100 caractères)."
+                   type="text"
+                   value="{{ billing_data.billing_address if billing_data else (user.billing_info.street if user and user.billing_info else '') }}">
+
+            <!-- Code postal -->
+            <label>Code postal</label>
+            <input name="billing_postal"
+                   pattern="^\d{4}$"
+                   required
+                   title="Code postal suisse : 4 chiffres."
+                   type="text"
+                   value="{{ billing_data.billing_postal if billing_data else (user.billing_info.postal_code if user and user.billing_info else '') }}">
+
+            <!-- Ville -->
+            <label>Ville</label>
+            <input name="billing_city"
+                   pattern="^[A-Za-zÀ-ÿ\s'-]{2,50}$"
+                   required
+                   title="Nom de ville invalide."
+                   type="text"
+                   value="{{ billing_data.billing_city if billing_data else (user.billing_info.city if user and user.billing_info else '') }}">
+
+            <!-- Pays -->
+            <label>Pays</label>
+            <select name="billing_country" required>
+                <option value="CH"
+                        {% if (billing_data and billing_data.billing_country == 'CH' )
+                        or (user and user.billing_info and user.billing_info.country == 'CH' ) %}selected{% endif %}>
+                    Suisse
+                </option>
+            </select>
+
+            <!-- Canton -->
+            <label>Canton</label>
+            <select name="billing_canton" required>
+                <option value="VD"
+                        {% if (billing_data and billing_data.billing_canton == 'VD' )
+                        or (user and user.billing_info and user.billing_info.region == 'VD' ) %}selected{% endif %}>
+                    Vaud
+                </option>
+                <option value="FR"
+                        {% if (billing_data and billing_data.billing_canton == 'FR' )
+                        or (user and user.billing_info and user.billing_info.region == 'FR' ) %}selected{% endif %}>
+                    Fribourg
+                </option>
+            </select>
+
+            <p style="color: orange; font-style: italic;">
+                ⚠️ Livraison uniquement dans les cantons de Vaud et Fribourg pour le moment.
+                D'autres cantons seront ajoutés prochainement.
+            </p>
+
+            <button type="submit">Continuer vers le paiement</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

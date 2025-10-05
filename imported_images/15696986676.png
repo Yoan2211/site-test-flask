@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Ma boutique</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/mobile.css" media="screen and (max-width: 768px)">
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Flash messages */
+        .flash-messages {
+            margin: 1rem;
+        }
+
+        .alert {
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-error {
+            background: #ffcccc;
+            color: #990000;
+        }
+
+        .alert-success {
+            background: #ccffcc;
+            color: #006600;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Ma boutique</h1>
+            <nav style="display:flex; gap:1rem; align-items:center;">
+                <a href="/">Accueil</a>
+                <a href="/gobelet">Produit</a>
+                <a href="/cart">Panier</a>
+                <a href="/about">À propos</a>
+                <a href="/contact">Contact</a>
+
+                <!-- Bouton logout si utilisateur connecté -->
+                
+                <a href="/login">Connexion</a>
+                <a href="/register">Inscription</a>
+                
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Messages flash -->
+        
+        
+        <div class="flash-messages">
+            
+            <div class="alert
+                        alert-error
+                        
+                        ">
+                Vous devez être connecté.
+            </div>
+            
+        </div>
+        
+        
+
+        
+<div class="form-box" style="max-width: 450px; margin: 3rem auto;">
+    <h2>Connexion</h2>
+
+    
+
+    <form method="POST" action="/login">
+        <label for="email">Email :</label>
+        <input type="email" id="email" name="email" value="" required>
+
+        <label for="password">Mot de passe :</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Se connecter</button>
+    </form>
+
+    <p style="margin-top: 1rem;">
+        Pas encore de compte ?
+        <a href="/register" style="color:#ff6600; text-decoration: underline;">Créer un compte</a>
+    </p>
+</div>
+
+    </main>
+
+    <footer>
+        &copy; 2025 Ma boutique — Tous droits réservés
+    </footer>
+</body>
+</html>

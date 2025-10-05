@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Choisissez une activité à importer 🏃‍♀️</h2>
+
+{% if strava_connected %}
+<ul>
+    {% for act in activities %}
+    <li>
+        <b>{{ act.name }}</b> — {{ (act.distance/1000)|round(2) }} km — {{ (act.moving_time/60)|round }} min
+        <a href="{{ url_for('strava.import_activity', activity_id=act.id) }}">Importer sur mon gobelet</a>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>Connectez votre compte Strava pour voir vos activités et les importer sur votre gobelet.</p>
+{% endif %}
+
+{% endblock %}

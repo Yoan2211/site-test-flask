@@ -1,0 +1,132 @@
+{
+    "resource": "order",
+    "id": "ord_tkVm5fES23G4i47i4JXEJ",
+    "profileId": "pfl_LsQMRVTr8m",
+    "method": "twint",
+    "amount": {
+        "value": "12.90",
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "isCancelable": false,
+    "metadata": {
+        "order_id": "b118575c39764e3380774a8488907945",
+        "items": [
+            {
+                "color": "blanc",
+                "id": "0cb6df0ed78c4605a2cffdfce5f11edd",
+                "image": "img/gobelet.jpg",
+                "name": "Gobelet personnalisé",
+                "options": {
+                    "add_results": false,
+                    "add_route": false,
+                    "results": null,
+                    "route_url": null
+                },
+                "qty": 1,
+                "sku": "gobelet",
+                "total": 12.9,
+                "unit_price": 12.9
+            }
+        ],
+        "total": 12.9,
+        "currency": "CHF"
+    },
+    "createdAt": "2025-09-21T17:00:39+00:00",
+    "mode": "test",
+    "locale": "fr_CH",
+    "billingAddress": {
+        "streetAndNumber": "vsefsefser",
+        "postalCode": "1004",
+        "city": "Lausanne",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoanauberson2@gmail.com"
+    },
+    "shopperCountryMustMatchBillingCountry": false,
+    "orderNumber": "b118575c39764e3380774a8488907945",
+    "shippingAddress": {
+        "streetAndNumber": "vsefsefser",
+        "postalCode": "1004",
+        "city": "Lausanne",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoanauberson2@gmail.com"
+    },
+    "amountCaptured": {
+        "value": "12.90",
+        "currency": "CHF"
+    },
+    "paidAt": "2025-09-21T17:00:43+00:00",
+    "redirectUrl": "http://5458088fa7e0.ngrok-free.app/payment/success",
+    "webhookUrl": "https://5458088fa7e0.ngrok-free.app/webhook",
+    "lines": [
+        {
+            "resource": "orderline",
+            "id": "odl_PqHEEQJ5tTWCng7i4JXEJ",
+            "orderId": "ord_tkVm5fES23G4i47i4JXEJ",
+            "name": "Gobelet personnalisé",
+            "sku": "gobelet",
+            "type": "physical",
+            "status": "paid",
+            "metadata": {
+                "add_results": false,
+                "add_route": false,
+                "results": null,
+                "route_url": null
+            },
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "12.90",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "12.90",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-09-21T17:00:39+00:00"
+        }
+    ],
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/orders/ord_tkVm5fES23G4i47i4JXEJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19340621/orders/ord_tkVm5fES23G4i47i4JXEJ",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-order",
+            "type": "text/html"
+        }
+    }
+}

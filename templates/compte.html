@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Mon Compte{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="account-card">
+        <h2>Mon Compte</h2>
+        <p>Voici vos informations personnelles et de facturation.</p>
+
+        <!-- Infos personnelles -->
+        <h3>Informations personnelles</h3>
+        <p><strong>Nom :</strong> {{ user.last_name }} </p>
+        <p><strong>Prénom :</strong> {{ user.first_name }} </p>
+        <p><strong>Email :</strong> {{ user.email }}</p>
+
+        <!-- Adresse / Facturation -->
+        <h3>Adresse / Facturation</h3>
+        {% if user.billing_info %}
+        <p><strong>Rue et numéro :</strong> {{ user.billing_info.street or '-' }}</p>
+        <p><strong>Code postal :</strong> {{ user.billing_info.postal_code or '-' }}</p>
+        <p><strong>Ville :</strong> {{ user.billing_info.city or '-' }}</p>
+        <p><strong>Canton :</strong> {{ user.billing_info.region or '-' }}</p>
+        <p><strong>Pays :</strong> {{ user.billing_info.country or '-' }}</p>
+        {% else %}
+        <p>Aucune information de facturation renseignée.</p>
+        {% endif %}
+
+        
+        <!-- Commandes -->
+        <h3 style="margin-top: 2rem;">Mes commandes</h3>
+        {% if orders %}
+        <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+            <thead>
+                <tr>
+                    <th style="text-align: left; padding: 0.5rem; border-bottom: 2px solid #ff6600;">Numéro</th>
+                    <th style="text-align: left; padding: 0.5rem; border-bottom: 2px solid #ff6600;">Montant</th>
+                    <th style="text-align: left; padding: 0.5rem; border-bottom: 2px solid #ff6600;">Statut</th>
+                    <th style="text-align: left; padding: 0.5rem; border-bottom: 2px solid #ff6600;">Date de paiement</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr style="border-bottom: 1px solid #333;">
+                    <td style="padding: 0.5rem;">{{ order.order_number }}</td>
+                    <td style="padding: 0.5rem;">{{ order.amount }} {{ order.currency }}</td>
+                    <td style="padding: 0.5rem;">
+                        {% if order.status == "paid" %}
+                        <span style="color: #00cc66; font-weight: bold;">Payée</span>
+                        {% elif order.status == "pending" %}
+                        <span style="color: #ff8800; font-weight: bold;">En attente</span>
+                        {% elif order.status == "failed" %}
+                        <span style="color: #ff3300; font-weight: bold;">Échouée</span>
+                        {% elif order.status == "canceled" %}
+                        <span style="color: #999; font-weight: bold;">Annulée</span>
+                        {% else %}
+                        <span>{{ order.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.5rem;">
+                        {% if order.payment_date %}
+                        {{ order.payment_date.strftime('%d/%m/%Y') }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>Aucune commande pour le moment.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Paiement échoué{% endblock %}
+{% block content %}
+<div class="card">
+    <h2 class="text-danger">❌ Paiement échoué</h2>
+    <p>Votre paiement n’a pas pu être validé pour la commande <strong>{{ order.id }}</strong>.</p>
+    <p>Statut : <strong>{{ status }}</strong></p>
+
+    <p style="margin-top:1rem;">
+        <a class="btn" href="{{ url_for('cart_view') }}">↩ Retour au panier</a>
+    </p>
+</div>
+{% endblock %}
