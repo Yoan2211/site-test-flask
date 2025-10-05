@@ -1,0 +1,25 @@
+# --- Environnement virtuel ---
+venv/
+.venv/
+env/
+.env/
+
+# --- Fichiers sensibles ---
+.env
+*.json
+*.pickle
+
+# --- Python cache ---
+__pycache__/
+*.pyc
+
+# --- Base de données locale ---
+*.db
+instance/
+
+# --- Fichiers systèmes ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
