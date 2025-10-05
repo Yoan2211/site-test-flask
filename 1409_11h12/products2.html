@@ -1,0 +1,79 @@
+<!-- templates/products2.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gobelet personnalisé</title>
+</head>
+<body>
+    <h1>Gobelet personnalisé</h1>
+    <p>CHF 12.90 — TVA incluse. Personnalisation en option.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul>
+        {% for category, message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+    <form method="post" enctype="multipart/form-data">
+        <label>Couleur</label>
+        <select name="color" required>
+            <option value="blanc">Blanc</option>
+            <option value="noir">Noir</option>
+            <option value="bleu">Bleu</option>
+            <option value="rouge">Rouge</option>
+        </select>
+
+        <label>Quantité</label>
+        <input type="number" name="qty" value="1" min="1" required />
+
+        <hr />
+
+        <label>
+            <input type="checkbox" name="add_results" />
+            Ajouter mes résultats (+CHF 5)
+        </label>
+
+        <fieldset>
+            <label>Nom de la course</label>
+            <input type="text" name="course_name" />
+
+            <label>Date</label>
+            <input type="date" name="course_date" />
+
+            <label>Numéro de dossard</label>
+            <input type="text" name="bib" />
+
+            <label>Temps</label>
+            <input type="text" name="time" placeholder="hh:mm:ss" />
+
+            <label>Classement (optionnel)</label>
+            <input type="text" name="rank" />
+
+            <label>Distance (optionnel)</label>
+            <input type="text" name="distance" />
+        </fieldset>
+
+        <hr />
+
+        <label>
+            <input type="checkbox" name="add_route" />
+            Ajouter le tracé (+CHF 7)
+        </label>
+
+        <label>Fichier du tracé</label>
+        <input type="file" name="route_file" accept=".svg,.png,.jpg,.jpeg,.gpx" />
+
+        <label>Nom du parcours (optionnel)</label>
+        <input type="text" name="route_name" />
+
+        <button type="submit">Ajouter au panier</button>
+    </form>
+
+    <p>Personnalisation par couleur, ajout des résultats et tracé de course pour un souvenir unique.</p>
+</body>
+</html>

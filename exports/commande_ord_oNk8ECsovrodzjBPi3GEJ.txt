@@ -1,0 +1,139 @@
+{
+    "resource": "order",
+    "id": "ord_oNk8ECsovrodzjBPi3GEJ",
+    "profileId": "pfl_LsQMRVTr8m",
+    "method": "twint",
+    "amount": {
+        "value": "25.80",
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "isCancelable": false,
+    "metadata": {
+        "order_id": "01e578f455f84241b512f8796fb1f129",
+        "items": [
+            {
+                "billing": {
+                    "address": "Chemin Des Roseyres 1A",
+                    "city": "Yverdon",
+                    "country": "CH",
+                    "email": "denervaudnolan@hotmail.ch",
+                    "first_name": "Nolan",
+                    "last_name": "Dénervaud",
+                    "postal_code": "1400"
+                },
+                "color": "noir",
+                "id": "fe157b76e35f47a0abc29fa2ed9aef60",
+                "image": "img/gobelet.jpg",
+                "name": "Gobelet personnalisé",
+                "options": {
+                    "add_results": false,
+                    "add_route": false,
+                    "results": null,
+                    "route_url": null
+                },
+                "qty": 2,
+                "sku": "gobelet",
+                "total": 25.8,
+                "unit_price": 12.9
+            }
+        ],
+        "total": 25.8,
+        "currency": "CHF"
+    },
+    "createdAt": "2025-09-15T19:38:24+00:00",
+    "mode": "test",
+    "locale": "fr_CH",
+    "billingAddress": {
+        "streetAndNumber": "Chemin Des Roseyres 1A",
+        "postalCode": "1400",
+        "city": "Yverdon",
+        "country": "CH",
+        "givenName": "Nolan",
+        "familyName": "Dénervaud",
+        "email": "denervaudnolan@hotmail.ch"
+    },
+    "shopperCountryMustMatchBillingCountry": false,
+    "orderNumber": "01e578f455f84241b512f8796fb1f129",
+    "shippingAddress": {
+        "streetAndNumber": "Chemin Des Roseyres 1A",
+        "postalCode": "1400",
+        "city": "Yverdon",
+        "country": "CH",
+        "givenName": "Nolan",
+        "familyName": "Dénervaud",
+        "email": "denervaudnolan@hotmail.ch"
+    },
+    "amountCaptured": {
+        "value": "25.80",
+        "currency": "CHF"
+    },
+    "paidAt": "2025-09-15T19:38:44+00:00",
+    "redirectUrl": "http://079fddb7be64.ngrok-free.app/payment/success",
+    "webhookUrl": "https://079fddb7be64.ngrok-free.app/webhook",
+    "lines": [
+        {
+            "resource": "orderline",
+            "id": "odl_zmjQ5Nbc7h39w4CPi3GEJ",
+            "orderId": "ord_oNk8ECsovrodzjBPi3GEJ",
+            "name": "Gobelet personnalisé",
+            "sku": "gobelet",
+            "type": "physical",
+            "status": "paid",
+            "metadata": {
+                "add_results": false,
+                "add_route": false,
+                "results": null,
+                "route_url": null
+            },
+            "isCancelable": false,
+            "quantity": 2,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 2,
+            "refundableQuantity": 2,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "12.90",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "25.80",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-09-15T19:38:24+00:00"
+        }
+    ],
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/orders/ord_oNk8ECsovrodzjBPi3GEJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19340621/orders/ord_oNk8ECsovrodzjBPi3GEJ",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-order",
+            "type": "text/html"
+        }
+    }
+}

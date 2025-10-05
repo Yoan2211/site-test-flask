@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Votre panier{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 style="color: #ff6600; margin-bottom: 1.5rem;">🛒 Votre panier</h2>
+
+    {% if items %}
+    <div class="card-light" style="overflow-x: auto;">
+        <table class="table cart-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #222; color: #ff6600;">
+                    <th style="padding: 0.8rem;">Produit</th>
+                    <th style="padding: 0.8rem;">Couleur</th>
+                    <th style="padding: 0.8rem;">Quantité</th>
+                    <th style="padding: 0.8rem;">Prix unitaire</th>
+                    <th style="padding: 0.8rem;">Total</th>
+                    <th style="padding: 0.8rem;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr style="border-bottom: 1px solid #333;">
+                    <td style="padding: 0.8rem;">{{ item.name }}</td>
+                    <td style="padding: 0.8rem;">{{ item.color }}</td>
+                    <td style="padding: 0.8rem;">{{ item.qty }}</td>
+                    <td style="padding: 0.8rem;">CHF {{ "%.2f"|format(item.unit_price) }}</td>
+                    <td style="padding: 0.8rem;">CHF {{ "%.2f"|format(item.total) }}</td>
+                    <td style="padding: 0.8rem;">
+                        <form action="{{ url_for('remove_item') }}" method="post">
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <button type="submit" class="btn btn-danger" style="background-color: #ff3300;">Retirer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center" style="margin-top: 2rem;">
+        <p class="price">💰 Total : <strong>CHF {{ "%.2f"|format(total) }}</strong></p>
+        <div class="cart-actions" style="display: flex; gap: 1rem;">
+            <form action="{{ url_for('clear_cart') }}" method="post">
+                <button type="submit" class="btn">Vider le panier</button>
+            </form>
+            <form action="{{ url_for('checkout_info') }}" method="post">
+                <button type="submit" class="btn">Procéder au paiement</button>
+            </form>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="card-light" style="text-align: center; margin-top: 2rem;">
+        <p style="color: #ccc;">Votre panier est vide.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

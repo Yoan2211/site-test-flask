@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-box" style="max-width: 450px; margin: 3rem auto;">
+    <h2>Connexion</h2>
+
+    {% if message %}
+    <div class="card-light" style="background:#222; color:#ff6600; margin-bottom:1rem; padding:1rem;">
+        {{ message }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}">
+        <label for="email">Email :</label>
+        <input type="email" id="email" name="email" value="{{ request.form.get('email', '') }}" required>
+
+        <label for="password">Mot de passe :</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Se connecter</button>
+    </form>
+
+    <p style="margin-top: 1rem;">
+        Pas encore de compte ?
+        <a href="{{ url_for('auth.register') }}" style="color:#ff6600; text-decoration: underline;">Créer un compte</a>
+    </p>
+</div>
+{% endblock %}

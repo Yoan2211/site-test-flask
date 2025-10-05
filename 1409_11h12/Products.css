@@ -1,0 +1,138 @@
+/* static/Products.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #fafafa;
+}
+
+.container {
+    display: flex;
+    gap: 30px;
+    max-width: 1100px;
+    margin: auto;
+    align-items: flex-start;
+}
+
+.image img {
+    width: 320px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.info {
+    flex: 1;
+}
+
+h1 {
+    font-size: 28px;
+    margin: 0 0 10px 0;
+}
+
+.price {
+    font-size: 22px;
+    margin-bottom: 5px;
+}
+
+.taxes {
+    color: gray;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    margin: 10px 0 4px 0;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+    display: block;
+    margin-bottom: 10px;
+    padding: 8px;
+    width: 260px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+}
+
+.quantity {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+    gap: 8px;
+}
+
+    .quantity button {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #aaa;
+        background: #f5f5f5;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+.btn-paypal {
+    width: 260px;
+    padding: 10px;
+    background: #ffdd00;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    border-radius: 6px;
+}
+
+.description {
+    margin: 20px 0;
+    color: #333;
+}
+
+.section {
+    margin-top: 16px;
+}
+
+.inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+}
+
+.subsection {
+    margin-top: 10px;
+    padding: 10px;
+    border-left: 3px solid #eee;
+}
+
+.hidden {
+    display: none;
+}
+
+.calc-box {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    background: #fff;
+    max-width: 300px;
+}
+
+    .calc-box small {
+        display: block;
+        margin: 10px 0;
+        color: gray;
+        font-size: 12px;
+    }
+
+    .calc-box .buttons button {
+        margin-right: 10px;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        background: #f5f5f5;
+        cursor: pointer;
+        border-radius: 5px;
+    }

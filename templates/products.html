@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Produits{% endblock %}
+{% block content %}
+<h1>Produits en vente</h1>
+
+<div class="table-wrap">
+    <table class="table products-table">
+        <thead>
+            <tr>
+                <th>Photo</th>
+                <th>Produit</th>
+                <th>Prix</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in products %}
+            <tr>
+                <td class="cell-image">
+                    <img src="{{ url_for('static', filename='img/' ~ p.image) }}"
+                         alt="{{ p.name }}"
+                         loading="lazy">
+                </td>
+                <td class="cell-name">{{ p.name }}</td>
+                <td class="cell-price">{{ "%.2f"|format(p.price) }} €</td>
+                <td class="cell-action">
+                    <form method="post" action="{{ url_for('add_to_cart', pid=p.id) }}">
+                        <input type="number" name="qty" value="1" min="1">
+                        <button class="btn btn-primary" type="submit">Ajouter au panier</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">Aucun produit pour le moment.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

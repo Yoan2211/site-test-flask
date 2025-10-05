@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Paiement réussi{% endblock %}
+{% block content %}
+<div class="card-light">
+
+    <h2 style="color:#0a8; text-align:center;">Paiement confirmé ✅</h2>
+    <p style="text-align:center;">Merci pour la commande <strong>{{ order.id }}</strong>.</p>
+    <p style="text-align:center;">Total: <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong></p>
+
+    <h3 style="text-align:center; margin-top:2rem;">Détails du panier</h3>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; margin-top:1rem;">
+            <thead>
+                <tr>
+                    <th style="border:1px solid #eee; padding:8px;">Article</th>
+                    <th style="border:1px solid #eee; padding:8px;">Couleur</th>
+                    <th style="border:1px solid #eee; padding:8px;">Qté</th>
+                    <th style="border:1px solid #eee; padding:8px;">PU</th>
+                    <th style="border:1px solid #eee; padding:8px;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for it in order.line_items %}
+                <tr>
+                    <td style="border:1px solid #eee; padding:8px;">{{ it.name }}</td>
+                    <td style="border:1px solid #eee; padding:8px;">{{ it.color }}</td>
+                    <td style="border:1px solid #eee; padding:8px;">{{ it.qty }}</td>
+                    <td style="border:1px solid #eee; padding:8px;">{{ '%.2f'|format(it.unit_price) }}</td>
+                    <td style="border:1px solid #eee; padding:8px;">{{ '%.2f'|format(it.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p style="text-align:center; margin-top:1.5rem;">
+        <a class="btn" href="{{ url_for('cart_view') }}">← Retour au panier</a>
+    </p>
+</div>
+{% endblock %}

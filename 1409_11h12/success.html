@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Paiement réussi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 40px;
+        }
+
+        .card {
+            display: inline-block;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            background: #fdfdfd;
+        }
+
+        h1 {
+            color: #4caf50;
+        }
+
+        ul {
+            text-align: left;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        li {
+            margin: 6px 0;
+        }
+
+        .total {
+            margin-top: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 12px 24px;
+            background-color: #00b4a0;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+            .back-link:hover {
+                background-color: #009783;
+            }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>✅ Paiement confirmé</h1>
+        <p>Merci pour votre commande n° <strong>{{ order.id }}</strong>.</p>
+
+        <h3>Détails de la commande :</h3>
+        <ul>
+            {% for product in order.products %}
+            <li>
+                {{ product.name }} ({{ product.color }}) × {{ product.qty }}
+                → CHF {{ '%.2f'|format(product.total) }}
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="total">
+            Total payé : CHF {{ '%.2f'|format(order.total) }}
+        </div>
+
+        <a href="{{ url_for('home') }}" class="back-link">⬅ Retour à l’accueil</a>
+    </div>
+</body>
+</html>

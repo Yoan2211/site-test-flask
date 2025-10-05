@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Ma boutique{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}" media="screen and (max-width: 768px)">
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Flash messages */
+        .flash-messages {
+            margin: 1rem;
+        }
+
+        .alert {
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-error {
+            background: #ffcccc;
+            color: #990000;
+        }
+
+        .alert-success {
+            background: #ccffcc;
+            color: #006600;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Ma boutique</h1>
+            <nav style="display:flex; gap:1rem; align-items:center;">
+                <a href="{{ url_for('home') }}">Accueil</a>
+                <a href="{{ url_for('gobelet') }}">Produit</a>
+                <a href="{{ url_for('cart_view') }}">Panier</a>
+                <a href="{{ url_for('about') }}">À propos</a>
+                <a href="{{ url_for('contact') }}">Contact</a>
+
+                <!-- Bouton logout si utilisateur connecté -->
+                {% if session.get('user_id') %}
+                <a href="{{ url_for('auth.compte') }}">Mon Compte</a>
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">Se déconnecter</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}">Connexion</a>
+                <a href="{{ url_for('auth.register') }}">Inscription</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Messages flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert
+                        {% if category == 'error' %}alert-error{% endif %}
+                        {% if category == 'success' %}alert-success{% endif %}
+                        {% if category == 'warning' %}alert-warning{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        &copy; {{ 2025 }} Ma boutique — Tous droits réservés
+    </footer>
+</body>
+</html>

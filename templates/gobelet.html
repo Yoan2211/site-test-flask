@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Gobelet personnalisé{% endblock %}
+{% block content %}
+<div class="container gobelet-container">
+    <div class="image-box">
+        <img alt="Gobelet personnalisé" src="{{ url_for('static', filename='img/gobelet.jpg') }}">
+    </div>
+
+    <div class="form-box">
+        <h2>Gobelet personnalisé</h2>
+        <p class="price">CHF 12.90 — TVA incluse</p>
+        <p>Ajoutez votre performance ou le tracé de votre course pour personnaliser votre gobelet.</p>
+
+        <!-- --- Strava / Guest Logic --- -->
+        {% if strava_connected or selected_activity or user_has_strava_linked %}
+        <!-- Strava connecté ou activité importée -->
+        {% if selected_activity %}
+        <div class="strava-import-box">
+            <h3>✅ Activité Strava importée</h3>
+            <p><b>{{ selected_activity.name }}</b></p>
+            <ul>
+                <li>Distance : {{ selected_activity.distance }} km</li>
+                <li>Temps : {{ selected_activity.time }}</li>
+                <li>Allure : {{ selected_activity.pace }}/km</li>
+            </ul>
+            {% if selected_activity.polyline %}
+            <p>Tracé GPS :</p>
+            <img src="{{ url_for('strava.track', activity_id=selected_activity.id) }}"
+                 alt="Tracé GPS" style="max-width:300px; border:1px solid #ccc; border-radius:8px;">
+            <fieldset>
+                <legend>Tracé</legend>
+                <label>
+                    <input name="add_route" type="checkbox"
+                           {% if selected_activity and selected_activity.polyline %}checked{% endif %}>
+                    Ajouter le tracé (+CHF 7)
+                </label>
+
+                {% if not selected_activity or not selected_activity.polyline %}
+                <label>Fichier du tracé (image)</label>
+                <input accept=".png,.jpg,.jpeg" name="route_file" type="file">
+                {% endif %}
+            </fieldset>
+            {% endif %}
+            <p style="font-size:0.9em; color:#777;">
+                Les champs ci-dessous sont déjà remplis avec vos données Strava. Vous pouvez les modifier si nécessaire.
+            </p>
+        </div>
+        {% else %}
+        <div class="choice-box" style="margin-bottom: 20px;">
+            <h3>Strava connecté ✅</h3>
+            <p>Vous pouvez maintenant importer une activité :</p>
+            <a href="{{ url_for('strava.activities') }}" class="btn btn-primary">Voir mes activités Strava</a>
+        </div>
+        {% endif %}
+
+        <!-- Bouton déconnexion Strava -->
+        <form action="{{ url_for('strava.disconnect') }}" method="post" style="margin-top:0.5rem;">
+            <button type="submit" class="btn btn-danger">Déconnecter Strava</button>
+        </form>
+
+        {% else %}
+        {% if not strava_just_disconnected %}
+        <!-- Affiche le bloc guest uniquement si l’utilisateur n’a pas cliqué sur Déconnexion -->
+        <div class="choice-box" style="margin-bottom: 20px;">
+            <h3>Choisissez une méthode :</h3>
+            <form action="{{ url_for('strava.connect') }}" method="get" style="margin-bottom:10px;">
+                <button type="submit" style="border:none; background:none; padding:0; cursor:pointer;">
+                    <img src="{{ url_for('static', filename='images/btn-strava@1x.png') }}"
+                         srcset="{{ url_for('static', filename='images/btn-strava@1x.png') }} 1x,
+                                             {{ url_for('static', filename='images/btn-strava@2x.png') }} 2x"
+                         alt="Se connecter à Strava"
+                         height="48">
+                </button>
+            </form>
+            <p style="font-size:0.9em; color:#777;">Ou remplissez les champs manuellement ci-dessous.</p>
+        </div>
+        {% endif %}
+        {% endif %}
+
+
+        <form enctype="multipart/form-data" method="post">
+            <label>Couleur</label>
+            <select name="color" required>
+                <option value="blanc">Blanc</option>
+                <option value="noir">Noir</option>
+                <option value="bleu">Bleu</option>
+                <option value="rouge">Rouge</option>
+            </select>
+
+            <label>Quantité</label>
+            <input min="1" name="qty" required type="number" value="1">
+
+            <fieldset>
+                <legend>Performance</legend>
+                <label>
+                    <input name="add_results" type="checkbox"
+                           {% if selected_activity %}checked{% endif %}>
+                    Ajouter mes résultats (+CHF 5)
+                </label>
+
+                <label>Temps</label>
+                <input name="time"
+                       value="{{ selected_activity.time if selected_activity else '' }}"
+                       pattern="^([0-9]{1,2}:)?[0-5]?[0-9]:[0-5][0-9]$"
+                       placeholder="hh:mm:ss"
+                       title="Format attendu : hh:mm:ss ou mm:ss"
+                       type="text">
+
+                <label>Distance (km)</label>
+                <input min="0.01" name="distance" step="0.01"
+                       value="{{ selected_activity.distance if selected_activity else '' }}"
+                       title="Distance en kilomètres (ex: 5.00)"
+                       type="number">
+            </fieldset>
+
+
+            <button type="submit">Ajouter au panier</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Paiement Twint</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 40px;
+        }
+
+        .card {
+            display: inline-block;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .qrcode {
+            margin: 20px auto;
+        }
+
+        .amount {
+            font-size: 1.4em;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .info {
+            margin-top: 15px;
+            color: #666;
+        }
+
+        .pay-button, .success-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #00b4a0;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+
+            .pay-button:hover, .success-button:hover {
+                background-color: #009783;
+            }
+
+        .success-button {
+            background-color: #4caf50;
+        }
+
+            .success-button:hover {
+                background-color: #3d8b41;
+            }
+    </style>
+</head>
+<body>
+    <h1>Paiement avec Twint</h1>
+
+    <div class="card">
+        <p>Scanne le QR code avec ton application Twint <br>ou clique sur le bouton ci-dessous.</p>
+
+        <div class="qrcode">
+            <img src="{{ qrcode_url }}" alt="QR Code Twint" width="250" height="250">
+        </div>
+
+        <div class="amount">
+            Montant: CHF {{ '%.2f'|format(order.total) }}
+        </div>
+
+        <div class="info">
+            Commande n° {{ order.id }}
+        </div>
+
+        <a href="{{ order.payment_url }}" class="pay-button">Payer avec Twint</a>
+
+        <br>
+
+        <!-- Bouton de confirmation manuelle -->
+        <a href="{{ url_for('payment_success') }}" class="success-button">✅ Marquer comme payé</a>
+    </div>
+
+    <p style="margin-top:20px;">
+        <a href="{{ url_for('cart_view') }}">⬅ Retour au panier</a>
+    </p>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Panier</title>
+</head>
+<body>
+    <h1>Panier</h1>
+
+    {% if items and items|length > 0 %}
+    <ul>
+        {% for it in items %}
+        <li>
+            {% if it.image %}
+            <img src="{{ url_for('static', filename=it.image) }}" alt="Gobelet" width="80" />
+            {% endif %}
+
+            <div>
+                <strong>{{ it.name }}</strong> — Couleur: {{ it.color }} — Qté: {{ it.qty }}<br />
+                Unit: CHF {{ '%.2f'|format(it.unit_price) }} — Ligne: CHF {{ '%.2f'|format(it.total) }}
+            </div>
+
+            {% if it.options.add_results and it.options.results %}
+            <div>
+                Résultats:
+                {{ it.options.results.course_name }}
+                · {{ it.options.results.course_date }}
+                · Dossard {{ it.options.results.bib }}
+                · Temps {{ it.options.results.time }}
+                {% if it.options.results.rank %} · {{ it.options.results.rank }}{% endif %}
+                {% if it.options.results.distance %} · {{ it.options.results.distance }}{% endif %}
+            </div>
+            {% endif %}
+
+            {% if it.options.add_route %}
+            <div>
+                Tracé:
+                {% if it.options.route_path %}
+                <a href="{{ url_for('static', filename=it.options.route_path) }}" target="_blank">
+                    {{ it.options.route_name or 'Fichier joint' }}
+                </a>
+                {% else %}
+                {{ it.options.route_name or 'Fichier joint' }}
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('remove_item', item_id=it.id) }}" style="display:inline;">
+                <button type="submit">Retirer</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <p><strong>Total: CHF {{ '%.2f'|format(total) }}</strong></p>
+
+    <form method="post" action="{{ url_for('clear_cart') }}" style="display:inline;">
+        <button type="submit">Vider le panier</button>
+    </form>
+
+    <form method="post" action="{{ url_for('checkout') }}" style="display:inline; margin-left:8px;">
+        <button type="submit">Valider l’achat</button>
+    </form>
+
+    <p><a href="{{ url_for('gobelet') }}">Continuer les achats</a></p>
+    {% else %}
+    <p>Le panier est vide.</p>
+    <p><a href="{{ url_for('gobelet') }}">Continuer les achats</a></p>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,142 @@
+{
+    "resource": "order",
+    "id": "ord_2Cnu8qESPCcZyJDnrZxEJ",
+    "profileId": "pfl_LsQMRVTr8m",
+    "method": "twint",
+    "amount": {
+        "value": "24.90",
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "isCancelable": false,
+    "metadata": {
+        "order_id": "6ed15fdadd1d4f1cb2c3a4484c8c013e",
+        "items": [
+            {
+                "color": "blanc",
+                "id": "22e279071b764b77a5d1cc6ab11ba6f0",
+                "image": "img/gobelet.jpg",
+                "name": "Gobelet personnalisé",
+                "options": {
+                    "add_results": true,
+                    "add_route": true,
+                    "from_strava": true,
+                    "results": {
+                        "distance": 9.35,
+                        "pace": "5:35",
+                        "time": "52:15"
+                    },
+                    "route_url": "/strava/track/15674292762"
+                },
+                "qty": 1,
+                "sku": "gobelet",
+                "total": 24.9,
+                "unit_price": 24.9
+            }
+        ],
+        "total": 24.9,
+        "currency": "CHF"
+    },
+    "createdAt": "2025-10-01T11:18:47+00:00",
+    "mode": "test",
+    "locale": "fr_CH",
+    "billingAddress": {
+        "streetAndNumber": "looooool",
+        "postalCode": "1004",
+        "city": "Lausanne",
+        "region": "FR",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoanauberson2@gmail.com"
+    },
+    "shopperCountryMustMatchBillingCountry": false,
+    "orderNumber": "6ed15fdadd1d4f1cb2c3a4484c8c013e",
+    "shippingAddress": {
+        "streetAndNumber": "looooool",
+        "postalCode": "1004",
+        "city": "Lausanne",
+        "region": "FR",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoanauberson2@gmail.com"
+    },
+    "amountCaptured": {
+        "value": "24.90",
+        "currency": "CHF"
+    },
+    "paidAt": "2025-10-01T11:18:50+00:00",
+    "redirectUrl": "http://d12638548488.ngrok-free.app/payment/success",
+    "webhookUrl": "https://d12638548488.ngrok-free.app/webhook",
+    "lines": [
+        {
+            "resource": "orderline",
+            "id": "odl_zfcjnHhkZ4unmcDnrZxEJ",
+            "orderId": "ord_2Cnu8qESPCcZyJDnrZxEJ",
+            "name": "Gobelet personnalisé",
+            "sku": "gobelet",
+            "type": "physical",
+            "status": "paid",
+            "metadata": {
+                "add_results": true,
+                "add_route": true,
+                "from_strava": true,
+                "results": {
+                    "distance": 9.35,
+                    "pace": "5:35",
+                    "time": "52:15"
+                },
+                "route_url": "/strava/track/15674292762"
+            },
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "24.90",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "24.90",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-10-01T11:18:47+00:00"
+        }
+    ],
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/orders/ord_2Cnu8qESPCcZyJDnrZxEJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19340621/orders/ord_2Cnu8qESPCcZyJDnrZxEJ",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-order",
+            "type": "text/html"
+        }
+    }
+}

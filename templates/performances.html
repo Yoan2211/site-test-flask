@@ -1,0 +1,22 @@
+<!-- templates/performances.html -->
+{% extends "base.html" %}
+{% block title %}Performances{% endblock %}
+{% block content %}
+<h1>Ajouter une performance</h1>
+<form method="post">
+    <label>Activité</label>
+    <input type="text" name="activite" required>
+    <label>Distance</label>
+    <input type="text" name="distance" required>
+    <label>Durée</label>
+    <input type="text" name="duree" required>
+    <button type="submit">Ajouter</button>
+</form>
+
+<h2>Historique</h2>
+<ul>
+    {% for perf in performances %}
+    <li>{{ perf.activite }} — {{ perf.distance }} — {{ perf.duree }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

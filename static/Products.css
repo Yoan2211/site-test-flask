@@ -1,0 +1,333 @@
+/* static/Products.css */
+/* Palette & variables */
+:root {
+  --brand-700: #004B50;
+  --brand-600: #0A6C73;
+  --brand-500: #138A92;
+  --brand-400: #3AA6AD;
+  --brand-100: #E6F5F6;
+
+  --gray-900: #111827;
+  --gray-700: #374151;
+  --gray-500: #6B7280;
+  --gray-300: #D1D5DB;
+  --gray-200: #E5E7EB;
+  --gray-100: #F3F4F6;
+
+  --success: #059669;
+  --warning: #F59E0B;
+  --danger:  #DC2626;
+
+  --radius-s: 6px;
+  --radius-m: 8px;
+  --radius-l: 12px;
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,.06);
+  --shadow-2: 0 6px 16px rgba(0,0,0,.08);
+}
+
+/* Reset léger */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+  color: var(--gray-900);
+  background: #fafafa;
+  margin: 0;
+  padding: 20px;
+  line-height: 1.5;
+}
+
+/* Grille principale produit */
+.container {
+  display: flex;
+  gap: 30px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+.image img {
+  width: 320px;
+  max-width: 100%;
+  border: 1px solid #ddd;
+  border-radius: var(--radius-m);
+  background: #fff;
+  box-shadow: var(--shadow-1);
+}
+
+/* Colonne d'information */
+.info {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-m);
+  padding: 20px;
+  box-shadow: var(--shadow-1);
+}
+
+.info h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 0 0 10px 0;
+  color: var(--gray-900);
+}
+
+/* Prix et taxes */
+.price {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand-700);
+  margin-bottom: 6px;
+}
+
+.taxes {
+  color: var(--gray-500);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* Labels & champs */
+label {
+  display: block;
+  font-size: 14px;
+  color: var(--gray-700);
+  margin: 10px 0 6px 0;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+  display: block;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  width: 260px;
+  max-width: 100%;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-s);
+  background: #fff;
+  color: var(--gray-900);
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+select:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(19,138,146,.12);
+}
+
+/* Quantité */
+.quantity {
+  display: flex;
+  align-items: center;
+  margin: 16px 0;
+  gap: 8px;
+}
+
+.quantity button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--gray-300);
+  background: var(--gray-100);
+  cursor: pointer;
+  border-radius: var(--radius-s);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--gray-700);
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.quantity button:hover {
+  background: #fff;
+  border-color: var(--brand-400);
+  color: var(--brand-700);
+}
+
+/* Boutons génériques et CTA */
+button,
+.btn {
+  appearance: none;
+  border: 1px solid var(--brand-600);
+  background: var(--brand-600);
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .02s ease;
+}
+
+button:hover,
+.btn:hover {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+}
+
+button:active,
+.btn:active {
+  transform: translateY(1px);
+}
+
+/* Bouton PayPal/TWINT (hérité existant) */
+.btn-paypal {
+  width: 260px;
+  max-width: 100%;
+  padding: 12px;
+  background: #ffdd00;
+  border: none;
+  color: #1a1a1a;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 10px;
+  border-radius: var(--radius-s);
+  box-shadow: var(--shadow-1);
+  transition: filter .15s ease, transform .02s ease;
+}
+
+.btn-paypal:hover {
+  filter: brightness(0.98);
+}
+
+.btn-paypal:active {
+  transform: translateY(1px);
+}
+
+/* Descriptions et sections */
+.description {
+  margin: 20px 0;
+  color: #333;
+}
+
+.section {
+  margin-top: 16px;
+}
+
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+}
+
+/* Sous-sections & encarts */
+.subsection {
+  margin-top: 12px;
+  padding: 12px;
+  border-left: 3px solid #eee;
+  background: #fff;
+  border-radius: var(--radius-s);
+}
+
+.hidden {
+  display: none;
+}
+
+/* Boîte de calcul / encarts */
+.calc-box {
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: var(--radius-m);
+  background: #fff;
+  max-width: 320px;
+  box-shadow: var(--shadow-1);
+}
+
+.calc-box small {
+  display: block;
+  margin: 10px 0;
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
+.calc-box .buttons button {
+  margin-right: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--gray-300);
+  background: var(--gray-100);
+  cursor: pointer;
+  border-radius: var(--radius-s);
+  color: var(--gray-900);
+}
+
+.calc-box .buttons button:hover {
+  background: #fff;
+  border-color: var(--brand-400);
+}
+
+/* Cartes & listes (cart.html, etc.) */
+.card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-1);
+  padding: 16px;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+}
+
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--gray-200);
+}
+
+.list-item:last-child {
+  border-bottom: 0;
+}
+
+/* Alertes (flash messages si rendus) */
+.flash {
+  display: block;
+  padding: 10px 12px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--gray-200);
+  background: var(--gray-100);
+  color: var(--gray-900);
+  margin: 10px 0;
+}
+
+.flash.success {
+  border-color: rgba(5,150,105,.25);
+  background: rgba(5,150,105,.08);
+  color: var(--success);
+}
+
+.flash.error {
+  border-color: rgba(220,38,38,.25);
+  background: rgba(220,38,38,.08);
+  color: var(--danger);
+}
+
+/* Utilitaires */
+.mt-0 { margin-top: 0; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+
+.mb-0 { margin-bottom: 0; }
+.mb-8 { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+
+.w-100 { width: 100%; }
+.maxw-320 { max-width: 320px; }
+
+.center { text-align: center; }

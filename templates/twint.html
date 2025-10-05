@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Payer avec TWINT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2rem;
+        }
+
+        .wrap {
+            max-width: 520px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        img.qr {
+            width: 260px;
+            height: 260px;
+            border: 1px solid #eee;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 18px;
+            background: #00B9FF;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+            .btn:hover {
+                background: #0099d3;
+            }
+
+        .muted {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .row {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Paiement TWINT</h1>
+        <p class="muted">Scannez le QR avec l’app TWINT ou cliquez sur le bouton ci-dessous pour ouvrir la page de paiement.</p>
+        <div class="row">
+            <img class="qr" src="{{ qrcode_url }}" alt="QR TWINT">
+        </div>
+        <div class="row">
+            <a class="btn" href="{{ payment_url }}">Payer avec TWINT</a>
+        </div>
+        <div class="row muted">
+            <p>Commande {{ order.id }} — Total {{ '%.2f'|format(order.total) }} {{ order.currency }}</p>
+        </div>
+    </div>
+</body>
+</html>

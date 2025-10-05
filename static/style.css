@@ -1,0 +1,382 @@
+/* ---- Styles de base ---- */
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    background-color: #111;
+    color: #fff;
+    transition: background 0.3s ease;
+}
+
+header {
+    background: #000;
+    color: #ff6600;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 8px rgba(255, 165, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+    nav a {
+        color: #ff6600;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.3s ease;
+    }
+
+        nav a:hover {
+            color: #fff;
+        }
+
+main {
+    padding: 2rem 1.5rem;
+}
+
+/* ---- Pied de page ---- */
+footer {
+    background: #000;
+    color: #999;
+    text-align: center;
+    padding: 1rem;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    border-top: 1px solid #333;
+}
+
+/* ---- Produit ---- */
+.product-page {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #1a1a1a;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(255, 165, 0, 0.1);
+}
+
+.product-image {
+    flex: 1 1 300px;
+    text-align: center;
+}
+
+    .product-image img {
+        max-width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 6px 16px rgba(255, 165, 0, 0.3);
+        transition: transform 0.3s ease;
+    }
+
+        .product-image img:hover {
+            transform: scale(1.02);
+        }
+
+.product-info {
+    flex: 1 1 350px;
+    max-width: 500px;
+    background: #fff;
+    color: #222;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(255, 165, 0, 0.2);
+}
+
+    .product-info h2 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #ff6600;
+    }
+
+    .product-info .price {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #ff6600;
+        margin-bottom: 1rem;
+    }
+
+.product-form label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.product-form input,
+.product-form select {
+    width: 100%;
+    padding: 0.7rem;
+    margin-top: 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #f9f9f9;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+    .product-form input:focus,
+    .product-form select:focus {
+        border-color: #ff6600;
+        outline: none;
+    }
+
+.product-form fieldset {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    background: #fefefe;
+}
+
+.product-form legend {
+    font-weight: bold;
+    color: #ff6600;
+    font-size: 1.1rem;
+}
+
+button {
+    margin-top: 2rem;
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ff6600, #ff8800);
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+    button:hover {
+        background: linear-gradient(135deg, #e65c00, #ff6600);
+        transform: translateY(-2px);
+    }
+
+/* ---- Responsive & Animations ---- */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .image-box,
+    .form-box {
+        width: 100%;
+    }
+
+    .form-box {
+        padding: 1.5rem;
+    }
+}
+
+/* ---- Animations sur les champs ---- */
+.form-box input,
+.form-box select,
+.form-box button {
+    transition: all 0.3s ease;
+}
+
+    .form-box input:focus,
+    .form-box select:focus {
+        border-color: #ff6600;
+        box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.2);
+    }
+
+    .form-box button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+    }
+
+/* ---- Gobelet personnalisé ---- */
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+.image-box {
+    flex: 1 1 300px;
+    text-align: center;
+}
+
+    .image-box img {
+        max-width: 100%;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+        transition: transform 0.3s ease;
+    }
+
+        .image-box img:hover {
+            transform: scale(1.02);
+        }
+
+.form-box {
+    flex: 1 1 350px;
+    background: #fff;
+    color: #222;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.2);
+}
+
+    .form-box h2 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        color: #ff6600;
+    }
+
+.price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ff6600;
+    margin-bottom: 1rem;
+}
+
+.form-box label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-box input,
+.form-box select {
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f9f9f9;
+    font-size: 1rem;
+}
+
+    .form-box input:focus,
+    .form-box select:focus {
+        border-color: #ff6600;
+        outline: none;
+    }
+
+fieldset {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    background: #fefefe;
+}
+
+legend {
+    font-weight: bold;
+    color: #ff6600;
+    font-size: 1.1rem;
+}
+
+.form-box button {
+    margin-top: 2rem;
+    width: 100%;
+    padding: 0.8rem;
+    background-color: #ff6600;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+    .form-box button:hover {
+        background-color: #e65c00;
+        transform: translateY(-2px);
+    }
+
+/* ---- Success ---- */
+.card-light {
+    background: #fff;
+    color: #222;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* ---- Animation d’apparition ---- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.container {
+    animation: fadeInUp 0.8s ease-out both;
+}
+/* ---- Animation de validation ---- */
+@keyframes pulseSuccess {
+    0% {
+        transform: scale(1);
+        background-color: #ff6600;
+    }
+
+    50% {
+        transform: scale(1.05);
+        background-color: #00cc66;
+    }
+
+    100% {
+        transform: scale(1);
+        background-color: #ff6600;
+    }
+}
+
+button.validating {
+    animation: pulseSuccess 0.6s ease;
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---- Page Compte ---- */
+.account-card {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+    .account-card h2 {
+        color: #ff6600;
+        margin-bottom: 1rem;
+    }
+
+    .account-card p {
+        font-size: 1rem;
+        margin-bottom: 0.8rem;
+    }
+
