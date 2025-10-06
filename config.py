@@ -17,8 +17,14 @@ UPLOAD_FOLDER = os.path.join(STATIC_DIR, "uploads")
 # 🔹 URLs publiques
 # ==========================================================
 # On charge PUBLIC_BASE_URL avant le reste pour pouvoir s’en servir plus bas
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:5000")
-NGROK_SERVER_URL = os.getenv("NGROK_SERVER_URL", PUBLIC_BASE_URL)
+
+# 🔹 Auto-détection : Render ou local
+if "RENDER" in os.environ:
+    # 👉 Environnement Render
+    PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://" + os.getenv("RENDER_EXTERNAL_HOSTNAME", "tonapp.onrender.com"))
+else:
+    # 👉 Environnement local (Ngrok)
+    PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://71134bf575ca.ngrok-free.app")
 
 
 # ==========================================================
