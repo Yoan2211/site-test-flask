@@ -29,16 +29,24 @@ def create_app():
     # 3️⃣ Créer l'application Flask
     app = Flask(__name__)
     app.config.from_object(config_object)
+    app.secret_key = os.getenv("SECRET_KEY", "change-me")
 
     # 4️⃣ Initialiser les extensions (base de données)
     db.init_app(app)
+    with app.app_context():
+        db.create_all()
 
     # 5️⃣ Importer et enregistrer les blueprints
     # ⚠️ Ces imports DOIVENT être ici (pas en haut du fichier)
     from routes.strava_routes import strava_bp
     from routes.auth import auth_bp
+    from routes.admin_routes import admin_bp, init_admin
 
     app.register_blueprint(strava_bp, url_prefix="/strava")
     app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
+
+    # --- Initialiser le panneau d'administration ---
+    init_admin(app)
 
     return app
