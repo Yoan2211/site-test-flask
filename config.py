@@ -44,7 +44,7 @@ class Config:
     # sur Render → PostgreSQL (db_RunCup)
     # Render envoie souvent 'postgres://', alors que SQLAlchemy veut 'postgresql://'
     if DB_URL.startswith("postgres://"):
-        DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
+        DB_URL = DB_URL.replace("postgres://", "postgresql+psycopg://", 1)
 
     SQLALCHEMY_DATABASE_URI = DB_URL
 
