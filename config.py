@@ -41,10 +41,13 @@ class Config:
         "DATABASE_URL",
         f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
     )
-    # sur Render → PostgreSQL (db_RunCup)
-    # Render envoie souvent 'postgres://', alors que SQLAlchemy veut 'postgresql://'
+    # Sur Render → PostgreSQL (db_RunCup)
+    # Forcer le driver psycopg3 quelle que soit la forme de l’URL
     if DB_URL.startswith("postgres://"):
         DB_URL = DB_URL.replace("postgres://", "postgresql+psycopg://", 1)
+    elif DB_URL.startswith("postgresql://") and "+psycopg" not in DB_URL:
+        DB_URL = DB_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
 
     SQLALCHEMY_DATABASE_URI = DB_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
