@@ -47,6 +47,7 @@ class Config:
         DB_URL = DB_URL.replace("postgres://", "postgresql+psycopg://", 1)
 
     SQLALCHEMY_DATABASE_URI = DB_URL
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Mollie
     MOLLIE_API_KEY = os.getenv("MOLLIE_API_KEY")
