@@ -13,7 +13,7 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 ALLOWED_IP = os.getenv("ADMIN_ALLOWED_IP")
 
 # --- Classes sécurisées Flask-Admin ---
-class SecureAdminIndexView(AdminIndexView):
+"""class SecureAdminIndexView(AdminIndexView):
     @expose("/")
     def index(self):
         if not session.get("logged_in"):
@@ -29,11 +29,12 @@ class SecureModelView(ModelView):
     def is_accessible(self):
         if ALLOWED_IP and request.remote_addr != ALLOWED_IP:
             return False
-        return session.get("logged_in", False)
+        return session.get("logged_in", False)"""
 
 # --- Routes login/logout admin ---
 @admin_bp.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
+    print("💻 IP détectée par Flask :", request.remote_addr)
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
