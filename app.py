@@ -12,6 +12,9 @@ To DO :
 6) Change Webhook in Strava
 """
 from flask import render_template, request, redirect, url_for, session, flash
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
+
 import os
 import uuid
 import json
@@ -42,13 +45,19 @@ from utils.image_utils import render_track_image
 import shutil
 
 from __init__ import create_app
+# ------------------------------------------------- Config -------------------------------------------------
 # ----------------- Chargement app Flask & Routes -----------------
 app = create_app()
 
-# ------------------------------------------------- Config -------------------------------------------------
-
+# ----------------- Initialisation de la DB -----------------
 with app.app_context():
     db.create_all()
+
+# ----------------- Interface Admin -----------------
+admin = Admin(app, name="RunCup Admin", template_mode="bootstrap3")
+
+# Ajoute ton modèle User (tu pourras ajouter d’autres ensuite)
+admin.add_view(ModelView(User, db.session))
 
 # Clés et URLs
 MOLLIE_SECRET_KEY = app.config["MOLLIE_SECRET_KEY"]
@@ -808,7 +817,12 @@ def check_session_timeout():
     if "user_id" in session or "guest_billing" in session:
         session["last_active_at"] = now.strftime("%Y-%m-%d %H:%M:%S")
 
-
+@app.before_request
+def restrict_admin():
+    if request.path.startswith("/admin"):
+        # Vérifie que l'IP du visiteur correspond à celle autorisée
+        if request.remote_addr != ALLOWED_IP:
+            return redirect(url_for("auth_bp.login"))  # ou "/" si tu veux juste bloquer
 
 # ================================================== Functions ==================================================
 # ----------------- Panier -----------------
