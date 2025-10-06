@@ -60,15 +60,16 @@ def admin_logout():
 # ⚙️ Initialisation de l’interface Flask-Admin
 # ==========================================================
 def init_admin(app):
-    # ⚠️ endpoint renommé pour éviter le conflit "admin"
-    admin_ui = Admin(
+    admin_panel = Admin(
         app,
         name="RunCup Admin",
         template_mode="bootstrap3",
-        index_view=SecureAdminIndexView(),
-        endpoint="admin_ui",
+        index_view=SecureAdminIndexView(),  # On garde notre vue sécurisée
+        endpoint="admin",  # ⚠️ revenir au endpoint par défaut
+        url="/admin"       # facultatif, mais clair
     )
 
-    # Ajout des tables à gérer dans le panneau admin
-    admin_ui.add_view(SecureModelView(User, db.session))
-    admin_ui.add_view(SecureModelView(Order, db.session))
+    # Ajout des modèles visibles dans l’interface
+    admin_panel.add_view(SecureModelView(User, db.session))
+    admin_panel.add_view(SecureModelView(Order, db.session))
+
