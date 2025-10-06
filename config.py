@@ -35,11 +35,18 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
 
     # Base de données
-    SQLALCHEMY_DATABASE_URI = os.getenv(
+
+    # en local → SQLite
+    DB_URL = os.getenv(
         "DATABASE_URL",
         f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
     )
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # sur Render → PostgreSQL (db_RunCup)
+    # Render envoie souvent 'postgres://', alors que SQLAlchemy veut 'postgresql://'
+    if DB_URL.startswith("postgres://"):
+        DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
+
+    SQLALCHEMY_DATABASE_URI = DB_URL
 
     # Mollie
     MOLLIE_API_KEY = os.getenv("MOLLIE_API_KEY")
