@@ -53,6 +53,7 @@ def admin_logout():
 
 # --- Initialisation de l’interface admin ---
 def init_admin(app):
-    admin = Admin(app, name="RunCup Admin", template_mode="bootstrap3", index_view=SecureAdminIndexView())
-    admin.add_view(SecureModelView(User, db.session))
-    admin.add_view(SecureModelView(Order, db.session))
+    admin_ui = Admin(app, name="RunCup Admin", template_mode="bootstrap3", index_view=SecureAdminIndexView(), endpoint="admin_ui")
+    admin_ui.add_view(SecureModelView(User, db.session))
+    admin_ui.add_view(SecureModelView(Order, db.session))
+
