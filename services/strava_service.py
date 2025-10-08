@@ -1,7 +1,7 @@
 import time
 import requests
 from flask import current_app
-from models.db_database import db, User
+from models.db_database import db, User, AppStats
 
 class StravaService:
     @staticmethod
@@ -130,5 +130,25 @@ class StravaService:
             params={"per_page": per_page, "page": page}
         )
         return response.json() if response.status_code == 200 else None
+    
+
+def increment_strava_connections():
+        """Incrémente le compteur d'athlètes connectés Strava"""
+        stats = AppStats.query.first()
+        if not stats:
+            stats = AppStats(strava_connected_count=0)
+            db.session.add(stats)
+        stats.strava_connected_count += 1
+        db.session.commit()
+
+
+def decrement_strava_connections():
+    """Décrémente le compteur d'athlètes connectés Strava"""
+    stats = AppStats.query.first()
+    if stats and stats.strava_connected_count > 0:
+        stats.strava_connected_count -= 1
+        db.session.commit()
+
+
 
 

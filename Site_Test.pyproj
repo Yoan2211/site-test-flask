@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="static\mobile.css" />
+    <Content Include="templates\admin_index.html" />
     <Content Include="templates\admin_login.html" />
     <Content Include="templates\checkout_info.html" />
     <Content Include="templates\compte.html" />
