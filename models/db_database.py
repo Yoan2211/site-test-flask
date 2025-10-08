@@ -137,3 +137,7 @@ class OrderPhoto(db.Model):
 
     def __repr__(self):
         return f"<OrderPhoto {self.id} - Order {self.order_id}>"
+
+class AppStats(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    strava_connected_count = db.Column(db.Integer, default=0)

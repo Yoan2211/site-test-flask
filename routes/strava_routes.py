@@ -65,6 +65,8 @@ def authorized():
         session.permanent = True
         flash("Strava connecté en mode invité ✅", "success")
 
+    StravaService.increment_strava_connections()
+
     return redirect(url_for("strava.activities"))
 
 @strava_bp.route("/disconnect", methods=["POST"])
@@ -120,6 +122,8 @@ def disconnect():
             flash("Strava déconnecté, lien conservé ✅", "success")
         else:
             flash("Compte Strava complètement déconnecté ✅", "success")
+
+        StravaService.increment_strava_connections()
     else:
         flash("Aucun compte Strava à déconnecter.", "info")
 

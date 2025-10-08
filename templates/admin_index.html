@@ -1,0 +1,31 @@
+{% extends 'admin/master.html' %}
+{% block body %}
+<div class="container mt-4">
+    <h3>RunCup Admin</h3>
+    <hr>
+
+    <p><strong>{{ connected_count }}</strong> athlètes actuellement connectés à Strava.</p>
+
+    <div class="d-flex flex-column gap-2" style="max-width: 400px;">
+        <form method="post" action="{{ url_for('admin_bp.cleanup_strava_tokens') }}">
+            <button type="submit" class="btn btn-warning w-100">
+                ⚙️ Nettoyer les athlètes au-delà de 999
+            </button>
+        </form>
+
+        <form method="post" action="{{ url_for('admin_bp.clear_all_strava_tokens') }}">
+            <button type="submit"
+                    class="btn btn-danger w-100"
+                    onclick="return confirm('⚠️ Cette action va déconnecter TOUS les utilisateurs Strava. Continuer ?')">
+                🧹 Tout nettoyer (supprimer tous les tokens Strava)
+            </button>
+        </form>
+    </div>
+
+    {% if connected_count == 0 %}
+    <p class="text-success mt-3">Aucun athlète connecté actuellement ✅</p>
+    {% elif connected_count > 999 %}
+    <p class="text-danger mt-3">⚠️ Attention : limite Strava dépassée ({{ connected_count }} / 1000)</p>
+    {% endif %}
+</div>
+{% endblock %}
