@@ -4,6 +4,7 @@ from services.strava_service import StravaService
 from utils.tts_utils import format_pace_mmss
 from utils.image_utils import render_track_image
 import polyline
+import requests
 
 strava_bp = Blueprint("strava", __name__)
 
@@ -61,15 +62,14 @@ def authorized():
         session["strava_token"] = token_data["access_token"]
         session["strava_expires_at"] = token_data["expires_at"]
         session["strava_refresh_token"] = token_data["refresh_token"]
+        session.permanent = True
         flash("Strava connecté en mode invité ✅", "success")
 
     return redirect(url_for("strava.activities"))
 
-import requests
-
 @strava_bp.route("/disconnect", methods=["POST"])
 def disconnect():
-    """Déconnexion complète du compte Strava (local + Strava API)"""
+    """Déconnexion Strava (libère les slots d'athlètes connectés mais garde le lien pour les users)"""
     user = None
     token_cleared = False
 
@@ -77,7 +77,7 @@ def disconnect():
     if "user_id" in session:
         user = User.query.get(session["user_id"])
         if user and user.strava_access_token:
-            # 🔸 Révocation Strava côté serveur
+            # 🔸 Révocation du token actif côté Strava (libère un athlète connecté)
             try:
                 requests.post(
                     "https://www.strava.com/oauth/deauthorize",
@@ -87,9 +87,8 @@ def disconnect():
             except Exception as e:
                 print(f"Erreur déconnexion Strava : {e}")
 
-            # 🔸 Suppression des tokens locaux
+            # 🔸 On efface seulement le token actif (mais pas le refresh_token ni l'athlete_id)
             user.strava_access_token = None
-            user.strava_refresh_token = None
             user.strava_token_expires_at = None
             db.session.commit()
             token_cleared = True
@@ -105,6 +104,7 @@ def disconnect():
         except Exception as e:
             print(f"Erreur déconnexion Strava (guest) : {e}")
 
+        # 🔸 On supprime complètement la session Strava du guest
         session.pop("strava_token", None)
         session.pop("strava_refresh_token", None)
         session.pop("strava_expires_at", None)
@@ -114,13 +114,18 @@ def disconnect():
     # 🔹 Indicateur pour le template
     session["strava_just_disconnected"] = True
 
+    # 🔹 Messages utilisateur
     if token_cleared:
-        flash("Compte Strava complètement déconnecté ✅", "success")
+        if user:
+            flash("Strava déconnecté, lien conservé ✅", "success")
+        else:
+            flash("Compte Strava complètement déconnecté ✅", "success")
     else:
         flash("Aucun compte Strava à déconnecter.", "info")
 
     # 🔹 Redirection adaptée
     return redirect(url_for("gobelet"))
+
 
 
 # ----------------- Activités Strava -----------------

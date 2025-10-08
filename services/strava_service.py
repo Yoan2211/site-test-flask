@@ -18,24 +18,53 @@ class StravaService:
         return user.strava_access_token
 
     @staticmethod
-    def refresh_token(user: User) -> bool:
-        """Rafraîchit le token Strava si expiré."""
-        response = requests.post("https://www.strava.com/oauth/token", data={
-            "client_id": current_app.config["STRAVA_CLIENT_ID"],
-            "client_secret": current_app.config["STRAVA_CLIENT_SECRET"],
-            "grant_type": "refresh_token",
-            "refresh_token": user.strava_refresh_token,
-        })
+    def refresh_token(user: User) -> str | None:
+        """
+        Rafraîchit le token Strava d'un utilisateur si expiré ou révoqué.
+        Retourne le nouveau access_token ou None en cas d'erreur.
+        """
+        from datetime import datetime
 
-        if response.status_code != 200:
-            return False
+        # ✅ Vérifie la présence d'un refresh_token
+        if not user or not user.strava_refresh_token:
+            print("❌ Aucun refresh_token Strava disponible pour cet utilisateur.")
+            return None
 
-        data = response.json()
-        user.strava_access_token = data["access_token"]
-        user.strava_refresh_token = data["refresh_token"]
-        user.strava_token_expires_at = data["expires_at"]
-        db.session.commit()
-        return True
+        now = datetime.utcnow().timestamp()
+
+        # ✅ Si le token actuel est encore valide, inutile de le rafraîchir
+        if user.strava_access_token and user.strava_token_expires_at and user.strava_token_expires_at > now:
+            return user.strava_access_token
+
+        try:
+            response = requests.post(
+                "https://www.strava.com/oauth/token",
+                data={
+                    "client_id": current_app.config["STRAVA_CLIENT_ID"],
+                    "client_secret": current_app.config["STRAVA_CLIENT_SECRET"],
+                    "grant_type": "refresh_token",
+                    "refresh_token": user.strava_refresh_token,
+                },
+                timeout=5
+            )
+
+            if response.status_code != 200:
+                print(f"❌ Erreur refresh Strava ({response.status_code}): {response.text}")
+                return None
+
+            data = response.json()
+            user.strava_access_token = data.get("access_token")
+            user.strava_refresh_token = data.get("refresh_token", user.strava_refresh_token)
+            user.strava_token_expires_at = data.get("expires_at")
+            db.session.commit()
+
+            print(f"✅ Token Strava rafraîchi pour l'utilisateur {user.id}")
+            return user.strava_access_token
+
+        except Exception as e:
+            print(f"⚠️ Exception lors du refresh Strava: {e}")
+            return None
+
 
     @staticmethod
     def get_token_from_session() -> tuple[User | None, str | None]:
