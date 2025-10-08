@@ -25,19 +25,23 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app.py" />
+    <Compile Include="routes\admin_routes.py" />
     <Compile Include="routes\auth.py" />
     <Compile Include="config.py" />
+    <Compile Include="routes\user_routes.py" />
     <Compile Include="services\googledrive.py" />
     <Compile Include="models\db_database.py" />
     <Compile Include="services\manage_sendgrid.py" />
     <Compile Include="routes\strava_routes.py" />
     <Compile Include="services\strava_service.py" />
+    <Compile Include="services\user_service.py" />
     <Compile Include="utils\image_utils.py" />
     <Compile Include="utils\tts_utils.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="static\mobile.css" />
+    <Content Include="templates\admin_login.html" />
     <Content Include="templates\checkout_info.html" />
     <Content Include="templates\compte.html" />
     <Content Include="templates\email.html" />

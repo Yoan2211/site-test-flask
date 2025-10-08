@@ -1,11 +1,28 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 
 # ==========================================================
 # 🔹 Chargement du fichier .env AVANT toute lecture des variables
 # ==========================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+# 🔹 Chargement du .env uniquement en LOCAL
+
+# Si l'app n'est PAS sur Render, on lit le .env local
+if "RENDER" not in os.environ:
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(env_path):
+        env_values = dotenv_values(env_path)
+        os.environ.update(env_values)  # on remplace d'éventuelles vieilles valeurs
+        print(f"💻 Environnement local → .env chargé depuis {env_path}")
+    else:
+        print("⚠️ Aucun fichier .env trouvé en local.")
+else:
+    print("☁️ Environnement Render → on utilise les variables Render.")
+
+print("✅ .env chargé depuis :", env_path)
+print("➡️ STRAVA_CLIENT_ID =", os.getenv("STRAVA_CLIENT_ID"))
+print("➡️ STRAVA_REDIRECT_URI =", os.getenv("STRAVA_REDIRECT_URI"))
 
 # ==========================================================
 # 🔹 Répertoires locaux
@@ -24,7 +41,7 @@ if "RENDER" in os.environ:
     PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://" + os.getenv("RENDER_EXTERNAL_HOSTNAME", "tonapp.onrender.com"))
 else:
     # 👉 Environnement local (Ngrok)
-    PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://71134bf575ca.ngrok-free.app")
+    PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://67dcf6d5baef.ngrok-free.app")
 
 
 # ==========================================================
@@ -63,7 +80,7 @@ class Config:
     # Strava OAuth
     STRAVA_CLIENT_ID = os.getenv("STRAVA_CLIENT_ID")
     STRAVA_CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
-    STRAVA_REDIRECT_URI = os.getenv("STRAVA_REDIRECT_URI") or f"{PUBLIC_BASE_URL}/strava/authorized"
+    STRAVA_REDIRECT_URI = os.getenv("STRAVA_REDIRECT_URI")
 
 
 
@@ -76,6 +93,7 @@ class Config:
 
     # Sessions
     SESSION_TIMEOUT_MINUTES = int(os.getenv("SESSION_TIMEOUT_MINUTES", 30))
+    ALLOWED_IP = os.getenv("ADMIN_ALLOWED_IP")  # récupère ton IP du .env
 
     # Uploads
     UPLOAD_FOLDER = UPLOAD_FOLDER
