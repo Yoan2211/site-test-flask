@@ -20,7 +20,6 @@ if "RENDER" not in os.environ:
 else:
     print("☁️ Environnement Render → on utilise les variables Render.")
 
-print("✅ .env chargé depuis :", env_path)
 print("➡️ STRAVA_CLIENT_ID =", os.getenv("STRAVA_CLIENT_ID"))
 print("➡️ STRAVA_REDIRECT_URI =", os.getenv("STRAVA_REDIRECT_URI"))
 
