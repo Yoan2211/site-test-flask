@@ -40,10 +40,12 @@ def create_app():
     # ⚠️ Ces imports DOIVENT être ici (pas en haut du fichier)
     from routes.strava_routes import strava_bp
     from routes.auth import auth_bp
+    from routes.user_routes import user_bp
     from routes.admin_routes import admin_bp, init_admin
 
     app.register_blueprint(strava_bp, url_prefix="/strava")
     app.register_blueprint(auth_bp)
+    app.register_blueprint(user_bp)
     app.register_blueprint(admin_bp)
 
     # --- Initialiser le panneau d'administration ---

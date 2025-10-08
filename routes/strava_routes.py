@@ -65,9 +65,11 @@ def authorized():
 
     return redirect(url_for("strava.activities"))
 
+import requests
+
 @strava_bp.route("/disconnect", methods=["POST"])
 def disconnect():
-    """Déconnexion du compte Strava (user ou guest)"""
+    """Déconnexion complète du compte Strava (local + Strava API)"""
     user = None
     token_cleared = False
 
@@ -75,30 +77,51 @@ def disconnect():
     if "user_id" in session:
         user = User.query.get(session["user_id"])
         if user and user.strava_access_token:
+            # 🔸 Révocation Strava côté serveur
+            try:
+                requests.post(
+                    "https://www.strava.com/oauth/deauthorize",
+                    headers={"Authorization": f"Bearer {user.strava_access_token}"},
+                    timeout=5
+                )
+            except Exception as e:
+                print(f"Erreur déconnexion Strava : {e}")
+
+            # 🔸 Suppression des tokens locaux
             user.strava_access_token = None
             user.strava_refresh_token = None
             user.strava_token_expires_at = None
             db.session.commit()
             token_cleared = True
 
-    # 🔹 Cas guest connecté à Strava via session
+    # 🔹 Cas "guest" connecté via session seulement
     if "strava_token" in session:
+        try:
+            requests.post(
+                "https://www.strava.com/oauth/deauthorize",
+                headers={"Authorization": f"Bearer {session['strava_token']}"},
+                timeout=5
+            )
+        except Exception as e:
+            print(f"Erreur déconnexion Strava (guest) : {e}")
+
         session.pop("strava_token", None)
         session.pop("strava_refresh_token", None)
         session.pop("strava_expires_at", None)
         session.pop("selected_activity", None)
         token_cleared = True
 
-    # 🔹 Mettre un flag pour le template
+    # 🔹 Indicateur pour le template
     session["strava_just_disconnected"] = True
 
     if token_cleared:
-        flash("Compte Strava déconnecté ❌", "success")
+        flash("Compte Strava complètement déconnecté ✅", "success")
     else:
         flash("Aucun compte Strava à déconnecter.", "info")
 
-    # 🔹 Redirection adaptée : user connecté → compte, guest → gobelet
+    # 🔹 Redirection adaptée
     return redirect(url_for("gobelet"))
+
 
 # ----------------- Activités Strava -----------------
 @strava_bp.route("/activities")
@@ -184,4 +207,16 @@ def track(activity_id):
     buf = render_track_image(coords, activity_id)
 
     return send_file(buf, mimetype="image/png", download_name=f"track_{activity_id}.png")
+
+@strava_bp.route("/debug-strava")
+def debug_strava():
+    import os
+    return {
+        "STRAVA_CLIENT_ID": os.getenv("STRAVA_CLIENT_ID"),
+        "STRAVA_REDIRECT_URI": os.getenv("STRAVA_REDIRECT_URI"),
+        "Flask_config_CLIENT_ID": current_app.config.get("STRAVA_CLIENT_ID"),
+        "Flask_config_REDIRECT_URI": current_app.config.get("STRAVA_REDIRECT_URI"),
+    }
+
+
 
