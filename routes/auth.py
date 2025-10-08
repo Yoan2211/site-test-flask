@@ -1,8 +1,7 @@
 from flask import Blueprint, request, session, redirect, url_for, render_template, flash
 from werkzeug.security import check_password_hash, generate_password_hash
-from models.db_database import db
-from models.db_database import User
-from models.db_database import Order
+from models.db_database import db, User, Order
+from services.strava_service import StravaService
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -26,6 +25,16 @@ def login():
         elif check_password_hash(user.password, password):
             # Connexion réussie
             session["user_id"] = user.id
+            session.permanent = True  # active le timer PERMANENT_SESSION_LIFETIME
+
+            # 🔄 Tentative de rafraîchir automatiquement le token Strava
+            token = StravaService.refresh_token(user)
+
+            if token:
+                flash("Connexion réussie ✅ (Strava synchronisé automatiquement)", "success")
+            else:
+                flash("Connexion réussie ✅ (reconnexion Strava nécessaire)", "warning")
+
             return redirect(url_for("auth.compte"))
         else:
             # Mauvais mot de passe

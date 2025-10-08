@@ -49,8 +49,13 @@ from __init__ import create_app
 # ----------------- Chargement app Flask & Routes -----------------
 app = create_app()
 
+# 🕒 Durée de vie des sessions Flask (ex: 30 minutes)
+SESSION_TIMEOUT_MINUTES = app.config["SESSION_TIMEOUT_MINUTES"]
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=SESSION_TIMEOUT_MINUTES)
+
 with app.app_context():
     db.create_all()
+
 
 # Clés et URLs
 MOLLIE_SECRET_KEY = app.config["MOLLIE_SECRET_KEY"]
