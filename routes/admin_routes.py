@@ -24,19 +24,33 @@ class SecureAdminIndexView(AdminIndexView):
         if not session.get("logged_in"):
             return redirect(url_for("admin_bp.admin_login"))
 
-        # 🧮 Récupère le compteur global depuis AppStats
         from models.db_database import AppStats, User, GuestStravaSession
+
+        # Comptage des utilisateurs connectés à Strava
         user_count = User.query.filter(
             User.strava_access_token.isnot(None),
             User.strava_access_token != ""
         ).count()
+
+        # Comptage des sessions invitées
         guest_count = GuestStravaSession.query.count()
 
+        # Total global
         connected_count = user_count + guest_count
-        return self.render("admin_index.html", connected_count=connected_count)
+
+        # Timestamp pour affichage
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+        return self.render(
+            "admin_index.html",
+            connected_count=connected_count,
+            user_count=user_count,
+            guest_count=guest_count,
+            timestamp=timestamp
+        )
 
     def is_accessible(self):
-        # ⛔ On retire le filtrage IP (Render masque souvent ton IP)
         return session.get("logged_in", False)
 
 

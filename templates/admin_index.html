@@ -4,12 +4,47 @@
     <h3>RunCup Admin</h3>
     <hr>
 
-    <p><strong>{{ connected_count }}</strong> athlètes actuellement connectés à Strava.</p>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card border-primary mb-3">
+                <div class="card-header bg-primary text-white">Athlètes connectés (total)</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ connected_count }}</h4>
+                    {% if connected_count == 0 %}
+                    <p class="text-success">Aucun athlète connecté actuellement ✅</p>
+                    {% elif connected_count > 999 %}
+                    <p class="text-danger">⚠️ Limite Strava atteinte ({{ connected_count }}/1000)</p>
+                    {% else %}
+                    <p class="text-muted">Dans la limite de 999 connexions autorisées</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-    {% if connected_count == 0 %}
-    <p class="text-success mt-3">Aucun athlète connecté actuellement ✅</p>
-    {% elif connected_count > 999 %}
-    <p class="text-danger mt-3">⚠️ Attention : limite Strava dépassée ({{ connected_count }} / 1000)</p>
-    {% endif %}
+        <div class="col-md-4">
+            <div class="card border-success mb-3">
+                <div class="card-header bg-success text-white">Utilisateurs enregistrés</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ user_count }}</h4>
+                    <p class="card-text">Comptes utilisateurs avec un token Strava actif.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-warning mb-3">
+                <div class="card-header bg-warning text-dark">Invités (guests)</div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ guest_count }}</h4>
+                    <p class="card-text">Sessions invitées actuellement connectées à Strava.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <p class="text-muted small">
+        Dernière mise à jour : {{ timestamp }}
+    </p>
 </div>
 {% endblock %}
