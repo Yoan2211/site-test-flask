@@ -139,5 +139,20 @@ class OrderPhoto(db.Model):
         return f"<OrderPhoto {self.id} - Order {self.order_id}>"
 
 class AppStats(db.Model):
+    __tablename__ = "app_stats"
     id = db.Column(db.Integer, primary_key=True)
     strava_connected_count = db.Column(db.Integer, default=0)
+
+class GuestStravaSession(db.Model):
+    __tablename__ = "guest_strava_sessions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    guest_id = db.Column(db.String(64), unique=True, nullable=False)  # identifiant aléatoire
+    strava_access_token = db.Column(db.String(255), nullable=False)
+    strava_refresh_token = db.Column(db.String(255), nullable=True)
+    strava_token_expires_at = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<GuestStravaSession {self.guest_id}>"
+

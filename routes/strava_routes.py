@@ -1,30 +1,74 @@
 from flask import Blueprint, redirect, request, session, flash, url_for, render_template, current_app, send_file
-from models.db_database import db, User
+from models.db_database import db, User, GuestStravaSession
 from services.strava_service import StravaService
+from services.strava_service import increment_strava_connections, decrement_strava_connections
 from utils.tts_utils import format_pace_mmss
 from utils.image_utils import render_track_image
 import polyline
 import requests
+import uuid
 
 strava_bp = Blueprint("strava", __name__)
 
 # ----------------- Logs Strava -----------------
+
+# ==========================================================
+# 🚴 Connexion à Strava
+# ==========================================================
 @strava_bp.route("/connect")
 def connect():
-    """Redirige vers Strava pour autorisation"""
+    """
+    Redirige vers Strava pour autorisation, 
+    en respectant le quota local (users + guests ≤ 999)
+    """
+    from services.strava_service import StravaService
+    from flask import flash, redirect, url_for
+
+    StravaService.cleanup_expired_connections()
+    # Vérifie le quota global (users + guests)
+    current_total = StravaService.recalculate_connected_count()
+    if current_total >= 999:
+        flash("⚠️ Limite maximale d'athlètes atteinte (999). Veuillez réessayer plus tard.", "warning")
+        print(f"🚫 Connexion Strava refusée : quota atteint ({current_total}/999).")
+        return redirect(url_for("gobelet"))
+
+    # Force Strava à redemander l’autorisation à chaque fois
     auth_url = (
         f"https://www.strava.com/oauth/authorize"
         f"?client_id={current_app.config['STRAVA_CLIENT_ID']}"
         f"&response_type=code"
         f"&redirect_uri={current_app.config['STRAVA_REDIRECT_URI']}"
-        f"&approval_prompt=auto"
+        f"&approval_prompt=force"
         f"&scope=activity:read"
     )
 
+    print(f"➡️ Redirection vers Strava (quota OK : {current_total}/999)")
     return redirect(auth_url)
 
+
+# ==========================================================
+# 🔑 Callback OAuth Strava
+# ==========================================================
 @strava_bp.route("/authorized")
 def authorized():
+    import requests, time, uuid
+    from models.db_database import GuestStravaSession
+    from services.strava_service import (
+        increment_strava_connections,
+        StravaService,
+    )
+
+    # 🧹 Nettoyage avant toute nouvelle connexion
+    StravaService.cleanup_expired_connections()
+
+    # Vérifie le quota avant d'aller plus loin
+    current_total = StravaService.recalculate_connected_count()
+    if current_total >= 999:
+        flash("⚠️ Limite maximale d'athlètes atteinte (999). Veuillez réessayer plus tard.", "warning")
+        print(f"🚫 Autorisation refusée : quota atteint ({current_total}/999).")
+        return redirect(url_for("gobelet"))
+
+    # --- Code Strava reçu ---
     code = request.args.get("code")
     if not code:
         flash("Erreur lors de la connexion Strava.", "error")
@@ -35,104 +79,197 @@ def authorized():
         flash("Impossible de récupérer le token Strava.", "error")
         return redirect(url_for("gobelet"))
 
-    # Sauvegarde temporaire de l'activité sélectionnée guest
+    strava_token = token_data["access_token"]
+    strava_refresh = token_data["refresh_token"]
+    strava_expires = token_data["expires_at"]
     pending_activity = session.get("selected_activity")
 
+    already_connected = False
+
+    # --- Cas USER connecté ---
     if "user_id" in session:
         user = User.query.get(session["user_id"])
         if user:
-            # ✅ Toujours écraser / associer le token Strava au compte user
-            user.strava_access_token = token_data["access_token"]
-            user.strava_refresh_token = token_data["refresh_token"]
-            user.strava_token_expires_at = token_data["expires_at"]
-            db.session.commit()
+             # 👇 Fusion automatique d’une session guest Strava existante
+            StravaService.migrate_guest_to_user(user)
+            if user.strava_access_token == strava_token:
+                already_connected = True
+                print(f"⚠️ Strava déjà lié pour user {user.id}, pas d'incrément.")
+            else:
+                # Révoque l'ancien token s'il existe
+                if user.strava_access_token:
+                    try:
+                        r = requests.post(
+                            "https://www.strava.com/oauth/deauthorize",
+                            headers={"Authorization": f"Bearer {user.strava_access_token}"},
+                            timeout=5,
+                        )
+                        print(f"🧹 Ancien token Strava révoqué pour user {user.id} ({r.status_code})")
+                    except Exception as e:
+                        print(f"⚠️ Erreur révocation Strava user {user.id}: {e}")
 
-            # Supprimer tous les tokens guest (fusion)
-            session.pop("strava_token", None)
-            session.pop("strava_refresh_token", None)
-            session.pop("strava_expires_at", None)
+                user.strava_access_token = strava_token
+                user.strava_refresh_token = strava_refresh
+                user.strava_token_expires_at = strava_expires
+                db.session.commit()
+                print(f"🔑 Nouveau token Strava enregistré pour user {user.id}")
 
-            # Réapplique l'activité sélectionnée si elle existait
+            # Nettoyage de session
+            for k in ["strava_token", "strava_refresh_token", "strava_expires_at"]:
+                session.pop(k, None)
+
             if pending_activity:
                 session["selected_activity"] = pending_activity
 
             flash("Compte Strava lié à votre profil ✅", "success")
+
+    # --- Cas GUEST ---
     else:
-        # Cas guest
-        session["strava_token"] = token_data["access_token"]
-        session["strava_expires_at"] = token_data["expires_at"]
-        session["strava_refresh_token"] = token_data["refresh_token"]
-        session.permanent = True
+        guest_id = session.get("guest_id") or str(uuid.uuid4())
+        session["guest_id"] = guest_id
+        session["strava_token"] = strava_token
+        session["strava_refresh_token"] = strava_refresh
+        session["strava_expires_at"] = strava_expires
+
+        entry = GuestStravaSession.query.filter_by(guest_id=guest_id).first()
+        if not entry:
+            entry = GuestStravaSession(
+                guest_id=guest_id,
+                strava_access_token=strava_token,
+                strava_refresh_token=strava_refresh,
+                strava_token_expires_at=strava_expires,
+            )
+            db.session.add(entry)
+        else:
+            entry.strava_access_token = strava_token
+            entry.strava_refresh_token = strava_refresh
+            entry.strava_token_expires_at = strava_expires
+        db.session.commit()
+
         flash("Strava connecté en mode invité ✅", "success")
 
-    StravaService.increment_strava_connections()
+    # --- Mise à jour compteur ---
+    skip_increment = session.pop("skip_strava_increment_once", False)
+    if not already_connected and not skip_increment:
+        increment_strava_connections()
+        StravaService.recalculate_connected_count()
+
 
     return redirect(url_for("strava.activities"))
 
+
+
+
+
+
+# ==========================================================
+# 🔒 Déconnexion Strava
+# ==========================================================
 @strava_bp.route("/disconnect", methods=["POST"])
 def disconnect():
-    """Déconnexion Strava (libère les slots d'athlètes connectés mais garde le lien pour les users)"""
+    """Déconnexion Strava (libère les slots d'athlètes connectés pour user ou guest)."""
+    from models.db_database import GuestStravaSession
+    from services.strava_service import (
+        decrement_strava_connections,
+        StravaService,
+    )
+    import requests
+
     user = None
     token_cleared = False
 
     # 🔹 Cas utilisateur connecté
     if "user_id" in session:
         user = User.query.get(session["user_id"])
-        if user and user.strava_access_token:
-            # 🔸 Révocation du token actif côté Strava (libère un athlète connecté)
+        if user and (user.strava_access_token or user.strava_refresh_token):
             try:
-                requests.post(
-                    "https://www.strava.com/oauth/deauthorize",
-                    headers={"Authorization": f"Bearer {user.strava_access_token}"},
-                    timeout=5
-                )
+                # 🔸 Révocation côté Strava (access_token)
+                if user.strava_access_token:
+                    r = requests.post(
+                        "https://www.strava.com/oauth/deauthorize",
+                        headers={"Authorization": f"Bearer {user.strava_access_token}"},
+                        timeout=5,
+                    )
+                    print(f"🔒 Strava user {user.id} → status {r.status_code}")
             except Exception as e:
-                print(f"Erreur déconnexion Strava : {e}")
+                print(f"⚠️ Erreur déconnexion Strava user {user.id}: {e}")
 
-            # 🔸 On efface seulement le token actif (mais pas le refresh_token ni l'athlete_id)
+            # 🔸 Nettoyage local complet
             user.strava_access_token = None
+            user.strava_refresh_token = None   # ← ✅ suppression du refresh_token !
             user.strava_token_expires_at = None
             db.session.commit()
+            print(f"🧹 Tokens Strava effacés pour user {user.id}")
+
+            # 🔸 Mise à jour compteur
+            decrement_strava_connections()
+            StravaService.recalculate_connected_count()
+
             token_cleared = True
 
-    # 🔹 Cas "guest" connecté via session seulement
-    if "strava_token" in session:
-        try:
-            requests.post(
-                "https://www.strava.com/oauth/deauthorize",
-                headers={"Authorization": f"Bearer {session['strava_token']}"},
-                timeout=5
-            )
-        except Exception as e:
-            print(f"Erreur déconnexion Strava (guest) : {e}")
+    # 🔹 Cas guest connecté via session
+    elif "strava_token" in session:
+        guest_token = session.get("strava_token")
+        guest_id = session.get("guest_id")
 
-        # 🔸 On supprime complètement la session Strava du guest
-        session.pop("strava_token", None)
-        session.pop("strava_refresh_token", None)
-        session.pop("strava_expires_at", None)
-        session.pop("selected_activity", None)
+        # 🔸 Révocation côté Strava
+        if guest_token:
+            try:
+                r = requests.post(
+                    "https://www.strava.com/oauth/deauthorize",
+                    headers={"Authorization": f"Bearer {guest_token}"},
+                    timeout=5,
+                )
+                print(f"🔒 Strava guest {guest_id or '?'} → status {r.status_code}")
+            except Exception as e:
+                print(f"⚠️ Erreur déconnexion Strava (guest): {e}")
+
+        # 🔸 Suppression de la session invitée dans la base
+        if guest_id:
+            GuestStravaSession.query.filter_by(guest_id=guest_id).delete()
+            db.session.commit()
+
+        # 🔸 Nettoyage complet de la session Flask
+        for key in [
+            "guest_id",
+            "strava_token",
+            "strava_refresh_token",
+            "strava_expires_at",
+            "selected_activity",
+        ]:
+            session.pop(key, None)
+
+        # 🔸 Mise à jour compteur
+        decrement_strava_connections()
+        StravaService.recalculate_connected_count()
+
         token_cleared = True
 
     # 🔹 Indicateur pour le template
     session["strava_just_disconnected"] = True
 
-    # 🔹 Messages utilisateur
+    # 🔹 Message utilisateur
     if token_cleared:
-        if user:
-            flash("Strava déconnecté, lien conservé ✅", "success")
-        else:
-            flash("Compte Strava complètement déconnecté ✅", "success")
-
-        StravaService.increment_strava_connections()
+        flash("Compte Strava déconnecté ✅", "success")
     else:
         flash("Aucun compte Strava à déconnecter.", "info")
 
-    # 🔹 Redirection adaptée
+    # 🔹 Affichage de l'état final des tokens (debug)
+    if user is not None:
+        print(f"🧠 État final user {user.id} → access={user.strava_access_token}, refresh={user.strava_refresh_token}")
+    else:
+        print("🧠 Aucun user trouvé dans la session (probablement invité ou session expirée)")
+
     return redirect(url_for("gobelet"))
 
 
 
+
+
 # ----------------- Activités Strava -----------------
+# ==========================================================
+# 🏃 Liste des activités Strava
+# ==========================================================
 @strava_bp.route("/activities")
 def activities():
     """
@@ -161,6 +298,9 @@ def activities():
         selected_activity=selected_activity
     )
 
+# ==========================================================
+# 🏁 Import d’une activité
+# ==========================================================
 @strava_bp.route("/import/<activity_id>")
 def import_activity(activity_id):
     """Importer une activité Strava si token disponible, sinon guest ne fait rien."""
@@ -200,6 +340,9 @@ def import_activity(activity_id):
     flash("Activité importée pour personnalisation du gobelet ✅", "success")
     return redirect(url_for("gobelet"))
 
+# ==========================================================
+# 🗺️ Tracé GPS
+# ==========================================================
 @strava_bp.route("/track/<activity_id>")
 def track(activity_id):
     """Afficher tracé GPS si token disponible, sinon message guest."""
@@ -217,6 +360,9 @@ def track(activity_id):
 
     return send_file(buf, mimetype="image/png", download_name=f"track_{activity_id}.png")
 
+# ==========================================================
+# 🧰 Debug (utile en dev)
+# ==========================================================
 @strava_bp.route("/debug-strava")
 def debug_strava():
     import os

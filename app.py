@@ -55,6 +55,8 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=SESSION_TIMEOUT_MIN
 
 with app.app_context():
     db.create_all()
+    StravaService.cleanup_expired_connections()
+
 
 
 # Clés et URLs
@@ -105,12 +107,14 @@ def gobelet():
     if "user_id" in session:
         user = User.query.get(session["user_id"])
         if user:
+            # 🔹 Récupère un token actif
             strava_token = StravaService.get_token(user)
             strava_connected = bool(strava_token)
         
-            # ⚠️ Nouveau : flag pour savoir si l'utilisateur est lié à Strava
-            user_has_strava_linked = bool(user.strava_access_token or user.strava_refresh_token)
-        
+            # ✅ Strava considéré comme "lié" uniquement si un token actif est présent
+            user_has_strava_linked = bool(user.strava_access_token)
+
+            # 🔹 Activité sélectionnée uniquement si token valide
             selected_activity = session.get("selected_activity") if strava_token else None
         else:
             session.pop("selected_activity", None)
@@ -814,6 +818,20 @@ def check_session_timeout():
     # Mettre à jour la dernière activité si l'utilisateur ou guest est actif
     if "user_id" in session or "guest_billing" in session:
         session["last_active_at"] = now.strftime("%Y-%m-%d %H:%M:%S")
+        
+
+@app.before_request
+def init_strava_stats():
+    """
+    Recalcule le compteur Strava dès le premier appel à l'application.
+    Garantit la cohérence du compteur après un redémarrage Render.
+    """
+    try:
+        total = StravaService.recalculate_connected_count()
+        print(f"✅ Compteur Strava recalculé au démarrage : {total}")
+    except Exception as e:
+        print(f"⚠️ Erreur au recalcul du compteur Strava au démarrage : {e}")
+
 
 # ================================================== Functions ==================================================
 # ----------------- Panier -----------------
@@ -846,7 +864,8 @@ def cart_total():
 
 
 if __name__ == "__main__":
-
+    with app.app_context():
+        StravaService.recalculate_connected_count()
     # En local, utiliser un tunnel (ngrok/cloudflared) pour recevoir le webhook
     app.run(debug=True, host="127.0.0.1", port=5000)
 
