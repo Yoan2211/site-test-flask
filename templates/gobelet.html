@@ -8,12 +8,24 @@
 
     <div class="form-box">
         <h2>Gobelet personnalisé</h2>
+
+        {% if strava_connected %}
+        <div class="alert alert-success" style="margin-top: 0.5rem;">
+            🔗 Compte Strava connecté
+        </div>
+        {% elif user_has_strava_linked %}
+        <div class="alert alert-warning" style="margin-top: 0.5rem;">
+            ⚠️ Votre compte Strava est lié, mais vous devez vous reconnecter.
+        </div>
+        {% endif %}
+
         <p class="price">CHF 12.90 — TVA incluse</p>
         <p>Ajoutez votre performance ou le tracé de votre course pour personnaliser votre gobelet.</p>
 
+
         <!-- --- Strava / Guest Logic --- -->
-        {% if strava_connected or selected_activity or user_has_strava_linked %}
-        <!-- Strava connecté ou activité importée -->
+        {% if strava_connected %}
+        <!-- ✅ Strava activement connecté -->
         {% if selected_activity %}
         <div class="strava-import-box">
             <h3>✅ Activité Strava importée</h3>
@@ -27,19 +39,6 @@
             <p>Tracé GPS :</p>
             <img src="{{ url_for('strava.track', activity_id=selected_activity.id) }}"
                  alt="Tracé GPS" style="max-width:300px; border:1px solid #ccc; border-radius:8px;">
-            <fieldset>
-                <legend>Tracé</legend>
-                <label>
-                    <input name="add_route" type="checkbox"
-                           {% if selected_activity and selected_activity.polyline %}checked{% endif %}>
-                    Ajouter le tracé (+CHF 7)
-                </label>
-
-                {% if not selected_activity or not selected_activity.polyline %}
-                <label>Fichier du tracé (image)</label>
-                <input accept=".png,.jpg,.jpeg" name="route_file" type="file">
-                {% endif %}
-            </fieldset>
             {% endif %}
             <p style="font-size:0.9em; color:#777;">
                 Les champs ci-dessous sont déjà remplis avec vos données Strava. Vous pouvez les modifier si nécessaire.
@@ -59,15 +58,15 @@
         </form>
 
         {% else %}
+        <!-- 🚫 Pas connecté à Strava -->
         {% if not strava_just_disconnected %}
-        <!-- Affiche le bloc guest uniquement si l’utilisateur n’a pas cliqué sur Déconnexion -->
         <div class="choice-box" style="margin-bottom: 20px;">
-            <h3>Choisissez une méthode :</h3>
+            <h3>Connectez votre compte Strava</h3>
             <form action="{{ url_for('strava.connect') }}" method="get" style="margin-bottom:10px;">
                 <button type="submit" style="border:none; background:none; padding:0; cursor:pointer;">
                     <img src="{{ url_for('static', filename='images/btn-strava@1x.png') }}"
                          srcset="{{ url_for('static', filename='images/btn-strava@1x.png') }} 1x,
-                                             {{ url_for('static', filename='images/btn-strava@2x.png') }} 2x"
+                                 {{ url_for('static', filename='images/btn-strava@2x.png') }} 2x"
                          alt="Se connecter à Strava"
                          height="48">
                 </button>
@@ -76,6 +75,7 @@
         </div>
         {% endif %}
         {% endif %}
+
 
 
         <form enctype="multipart/form-data" method="post">

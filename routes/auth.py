@@ -1,47 +1,46 @@
 from flask import Blueprint, request, session, redirect, url_for, render_template, flash
 from werkzeug.security import check_password_hash, generate_password_hash
 from models.db_database import db, User, Order
-from services.strava_service import StravaService
+from services.strava_service import StravaService, decrement_strava_connections
 
 auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    message, message_type = None, None
-
+    # NOTE: Nous FORÇONS la réautorisation Strava à chaque login en nettoyant
+    # les tokens Strava côté user si présents. L'utilisateur devra reconnecter via /connect.
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email")
+        password = request.form.get("password")
+
         user = User.query.filter_by(email=email).first()
+        if not user or not check_password_hash(user.password, password):
+            flash("Identifiants incorrects.", "error")
+            return redirect(url_for("auth.login"))
 
-        if not user:
-            # Aucun compte avec cet email
-            message = "Aucun compte n'est associé à cette adresse email."
-            message_type = "error"
-        elif not user.password:
-            # Compte guest (créé automatiquement après une commande)
-            message = "Cet email correspond à un compte invité créé lors d'une commande. Veuillez créer un compte pour vous connecter."
-            message_type = "error"
-        elif check_password_hash(user.password, password):
-            # Connexion réussie
-            session["user_id"] = user.id
-            session.permanent = True  # active le timer PERMANENT_SESSION_LIFETIME
+        session["user_id"] = user.id
+        flash("Connexion réussie ✅ — vous devrez reconnecter Strava si vous souhaitez importer des activités.", "success")
+        print(f"👤 Utilisateur {user.email} connecté (id={user.id})")
 
-            # 🔄 Tentative de rafraîchir automatiquement le token Strava
-            token = StravaService.refresh_token(user)
+        # --- FORCER de-reconnect Strava pour éviter reconnexions automatiques "fantômes"
+        # On vérifie s'il y a des tokens stockés côté user (access/refresh) : si oui, on les supprime proprement.
+        try:
+            if user.strava_access_token or user.strava_refresh_token:
+                print(f"🔒 Nettoyage tokens Strava existants pour user {user.id} (obligé pour forcer réauth).")
+                # Révoque côté Strava et nettoie en base
+                StravaService.disconnect_user(user)
+                # Décrémente le compteur global si on supprimait réellement quelque chose
+                decrement_strava_connections()
+                StravaService.recalculate_connected_count()
+                print(f"✅ Tokens Strava supprimés et compteur décrémenté pour user {user.id}")
+        except Exception as e:
+            # Ne doit pas empêcher la connexion si quelque chose casse côté API Strava
+            print(f"⚠️ Erreur en nettoyant tokens Strava pour user {user.id}: {e}")
 
-            if token:
-                flash("Connexion réussie ✅ (Strava synchronisé automatiquement)", "success")
-            else:
-                flash("Connexion réussie ✅ (reconnexion Strava nécessaire)", "warning")
+        # IMPORTANT : on ne tente PAS d'auto-refresh Strava ici — l'utilisateur doit repasser par le flow OAuth.
+        return redirect(url_for("auth.compte"))
 
-            return redirect(url_for("auth.compte"))
-        else:
-            # Mauvais mot de passe
-            message = "Email ou mot de passe incorrect."
-            message_type = "error"
-
-    return render_template("login.html", message=message, message_type=message_type)
+    return render_template("login.html")
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -57,11 +56,14 @@ def register():
 
         if existing_user:
             if existing_user.password is None:
-                # ⚡ Transformation guest -> vrai compte
+                # ⚡ Cas 1 : transformation d’un compte guest en vrai compte
                 existing_user.first_name = first_name
                 existing_user.last_name = last_name
                 existing_user.password = generate_password_hash(password, method='pbkdf2:sha256')
                 db.session.commit()
+
+                # 🧩 Si le guest avait une session Strava active, on la supprime proprement
+                StravaService.migrate_guest_to_user(existing_user)
 
                 message = "Votre compte a été activé avec succès. Vous pouvez maintenant vous connecter."
                 message_type = "success"
@@ -69,8 +71,9 @@ def register():
                 # Un compte normal existe déjà avec cet email
                 message = "Un compte existe déjà avec cet email."
                 message_type = "error"
+
         else:
-            # Cas normal : création d’un nouveau compte
+            # ⚙️ Cas 2 : création d’un nouvel utilisateur normal
             hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
             new_user = User(
                 first_name=first_name,
@@ -81,6 +84,9 @@ def register():
             db.session.add(new_user)
             db.session.commit()
 
+            # 🧩 Si un guest Strava est actif dans la session, on le supprime ici aussi
+            StravaService.migrate_guest_to_user(new_user)
+
             message = "Compte créé avec succès, vous pouvez vous connecter."
             message_type = "success"
 
@@ -88,8 +94,43 @@ def register():
 
 @auth_bp.route("/logout")
 def logout():
-    session.pop("user_id", None)
+    """
+    Déconnecte l’utilisateur du site ET de Strava proprement :
+    - Révoque le token Strava (user ou guest)
+    - Nettoie la session
+    - Met à jour le compteur global
+    """
+    from services.strava_service import StravaService
+
+    if "user_id" in session:
+        user = User.query.get(session["user_id"])
+        if user:
+            print(f"🔒 Déconnexion utilisateur {user.email} (id={user.id})...")
+
+            # Révoque proprement le token Strava s’il existe
+            if user.strava_access_token:
+                StravaService.disconnect_user(user)
+                print(f"✅ Strava déconnecté pour user {user.id}")
+            else:
+                print(f"⚠️ Aucun token Strava actif pour user {user.id}")
+
+        # Nettoyage session utilisateur Flask
+        session.pop("user_id", None)
+        session.pop("selected_activity", None)
+        session["strava_just_disconnected"] = True
+
+    else:
+        # Cas GUEST
+        print("🔒 Déconnexion d’un invité (guest)...")
+        StravaService.disconnect_session_principal()
+
+    # 🔄 Recalcule le compteur global
+    StravaService.recalculate_connected_count()
+
+    flash("Déconnexion réussie ✅ (Strava déconnecté et session effacée)", "success")
+    print("👋 Utilisateur déconnecté avec succès — session nettoyée.")
     return redirect(url_for("auth.login"))
+
 
 @auth_bp.route("/compte")
 def compte():
