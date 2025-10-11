@@ -407,7 +407,7 @@ class StravaService:
 
         db.session.commit()
 
-        print(f"🔄 AppStats.strava_connected_count mis à jour → {total} (users={users_connected}, guests={guests_connected})")
+        #print(f"🔄 AppStats.strava_connected_count mis à jour → {total} (users={users_connected}, guests={guests_connected})")
         return total
 
     @staticmethod

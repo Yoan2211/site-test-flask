@@ -40,7 +40,7 @@ if "RENDER" in os.environ:
     PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://" + os.getenv("RENDER_EXTERNAL_HOSTNAME", "tonapp.onrender.com"))
 else:
     # 👉 Environnement local (Ngrok)
-    PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://67dcf6d5baef.ngrok-free.app")
+    PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://f2da84381190.ngrok-free.app")
 
 
 # ==========================================================
@@ -69,8 +69,15 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Mollie
-    MOLLIE_API_KEY = os.getenv("MOLLIE_API_KEY")
     MOLLIE_SECRET_KEY = os.getenv("MOLLIE_SECRET_KEY")
+    MOLLIE_USE_LIVE = os.getenv("MOLLIE_USE_LIVE", "False").lower() == "true"
+    if MOLLIE_USE_LIVE:
+        MOLLIE_API_KEY = os.getenv("MOLLIE_API_KEY_LIVE")
+    else:
+        MOLLIE_API_KEY = os.getenv("MOLLIE_API_KEY_TEST")
+
+    USE_TWINT_PERSONAL= os.getenv("USE_TWINT_PERSONAL", "False").lower() == "true"
+    TWINT_PERSONAL_NUMBER = os.getenv("TWINT_PERSONAL_NUMBER", "+41791086276")
 
     # URLs publiques
     PUBLIC_BASE_URL = PUBLIC_BASE_URL
@@ -85,6 +92,7 @@ class Config:
 
     # SendGrid
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
     # Google Drive
     GOOGLE_CLIENT_SECRET_FILE = os.getenv("GOOGLE_CLIENT_SECRET_FILE")

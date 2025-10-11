@@ -34,6 +34,7 @@ import polyline
 
 # Mollie SDK
 from mollie.api.client import Client
+from routes.mollie import get_cart_items, cart_total
 from models.db_database import db, User, BillingInfo, Order, OrderPhoto
 
 
@@ -71,6 +72,10 @@ UPLOAD_FOLDER = app.config["UPLOAD_FOLDER"]
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 MAX_CONTENT_LENGTH = app.config["MAX_CONTENT_LENGTH"]
 ALLOWED_ROUTE_EXT = app.config["ALLOWED_ROUTE_EXT"]
+
+USE_TWINT_PERSONAL = app.config["USE_TWINT_PERSONAL"]
+TWINT_PERSONAL_NUMBER = app.config["TWINT_PERSONAL_NUMBER"]
+
 
 # Prix
 PRICES = app.config["PRICES"]
@@ -265,7 +270,7 @@ def contact():
 
 # ----------------- Paiement via Mollie (TWINT) -----------------
 # ------------------ Page checkout ------------------
-@app.route("/checkout", methods=["GET", "POST"])
+"""@app.route("/checkout", methods=["GET", "POST"])
 def checkout():
     user = None
     billing_info = None
@@ -676,7 +681,7 @@ def mollie_webhook():
         with open(txt_path, "w", encoding="utf-8") as f:
             f.write(json.dumps(order_data, indent=4, ensure_ascii=False))
 
-        """# 7️⃣ Gestion images (route)
+        # 7️⃣ Gestion images (route)
         image_path = None
         for item in items:
             opts = item.get("options", {})
@@ -692,7 +697,7 @@ def mollie_webhook():
                     photo = OrderPhoto(order_id=order.id, photo_url=image_path)
                     db.session.add(photo)
                     db.session.commit()
-                    print("🖼️ Image copiée et enregistrée en DB.")"""
+                    print("🖼️ Image copiée et enregistrée en DB.")
 
         
         image_path = None
@@ -789,7 +794,7 @@ def payment_success():
 
 @app.get("/webhook/ping")
 def webhook_ping():
-    return "pong", 200
+    return "pong", 200"""
 
 
 
@@ -828,19 +833,23 @@ def init_strava_stats():
     """
     try:
         total = StravaService.recalculate_connected_count()
-        print(f"✅ Compteur Strava recalculé au démarrage : {total}")
+        #print(f"✅ Compteur Strava recalculé au démarrage : {total}")
     except Exception as e:
         print(f"⚠️ Erreur au recalcul du compteur Strava au démarrage : {e}")
 
 
 # ================================================== Functions ==================================================
 # ----------------- Panier -----------------
-def get_cart_items():
+"""def get_cart_items():
     items = session.get("cart_items")
     if items is None:
         items = []
         session["cart_items"] = items
     return items
+
+def cart_total():
+    items = get_cart_items()
+    return round(sum(i.get("unit_price", 0.0) * i.get("qty", 1) for i in items), 2)"""
 
 def add_cart_item(item):
     items = get_cart_items()
@@ -857,9 +866,7 @@ def add_cart_item(item):
     items.append(item)
     session["cart_items"] = items
 
-def cart_total():
-    items = get_cart_items()
-    return round(sum(i.get("unit_price", 0.0) * i.get("qty", 1) for i in items), 2)
+
 
 
 

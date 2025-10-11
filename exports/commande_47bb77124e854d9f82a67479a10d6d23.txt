@@ -1,0 +1,85 @@
+{
+    "resource": "payment",
+    "id": "tr_Shg4e79mtFCSiMpnfGRFJ",
+    "mode": "test",
+    "createdAt": "2025-10-11T09:31:05+00:00",
+    "amount": {
+        "value": "12.90",
+        "currency": "CHF"
+    },
+    "description": "Commande 47bb77124e854d9f82a67479a10d6d23",
+    "method": "twint",
+    "metadata": {
+        "order_id": "47bb77124e854d9f82a67479a10d6d23",
+        "items": [
+            {
+                "color": "blanc",
+                "id": "a4152380783d4df4a0a03d27e4fc1865",
+                "image": "img/gobelet.jpg",
+                "name": "Gobelet personnalisé",
+                "options": {
+                    "add_results": false,
+                    "add_route": false,
+                    "from_strava": false,
+                    "results": null,
+                    "route_local": null,
+                    "route_url": null
+                },
+                "qty": 1,
+                "sku": "gobelet",
+                "total": 12.9,
+                "unit_price": 12.9
+            }
+        ],
+        "total": 12.9,
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "paidAt": "2025-10-11T09:31:09+00:00",
+    "amountRefunded": {
+        "value": "0.00",
+        "currency": "CHF"
+    },
+    "amountRemaining": {
+        "value": "12.90",
+        "currency": "CHF"
+    },
+    "locale": "fr_CH",
+    "countryCode": "FR",
+    "profileId": "pfl_AhYqE7RZFn",
+    "sequenceType": "oneoff",
+    "redirectUrl": "http://f2da84381190.ngrok-free.app/payment/success",
+    "webhookUrl": "https://f2da84381190.ngrok-free.app/webhook",
+    "settlementAmount": {
+        "value": "12.90",
+        "currency": "CHF"
+    },
+    "billingAddress": {
+        "streetAndNumber": "dwdewd 4",
+        "postalCode": "1433",
+        "city": "SUCHY",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "stravacup@gmail.com"
+    },
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/payments/tr_Shg4e79mtFCSiMpnfGRFJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19359006/payments/tr_Shg4e79mtFCSiMpnfGRFJ",
+            "type": "text/html"
+        },
+        "changePaymentState": {
+            "href": "https://www.mollie.com/checkout/test-mode?method=twint&token=6.ft5em3",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-payment",
+            "type": "text/html"
+        }
+    }
+}
