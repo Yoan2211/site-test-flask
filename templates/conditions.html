@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Conditions générales de vente{% endblock %}
+
+{% block content %}
+<section class="legal-page" style="max-width:900px; margin:2rem auto; line-height:1.7;">
+    <h2>Conditions générales de vente (CGV)</h2>
+    <p>En validant votre commande sur ce site, vous acceptez les présentes conditions générales.</p>
+
+    <h3>1. Produits</h3>
+    <p>Les gobelets personnalisés sont fabriqués à la demande selon vos choix. Les photos sont non contractuelles.</p>
+
+    <h3>2. Prix</h3>
+    <p>Les prix affichés incluent la TVA. Des frais de livraison peuvent s’appliquer selon le pays.</p>
+
+    <h3>3. Commande</h3>
+    <p>Toute commande implique l’acceptation des présentes CGV. Les données fournies doivent être exactes.</p>
+
+    <h3>4. Paiement</h3>
+    <p>Les paiements sont traités via <strong>Mollie</strong> de manière sécurisée. Nous ne conservons aucune donnée de carte bancaire.</p>
+
+    <h3>5. Livraison</h3>
+    <p>Les produits sont expédiés après impression 3D. Délai moyen : 5 à 10 jours ouvrés.</p>
+
+    <h3>6. Droit de rétractation</h3>
+    <p>Conformément à l’art. L221-28 du Code de la consommation, le droit de rétractation ne s’applique pas aux produits personnalisés.</p>
+
+    <h3>7. Données personnelles</h3>
+    <p>Voir notre <a href="{{ url_for('confidentialite') }}">Politique de confidentialité</a>.</p>
+
+    <h3>8. Litiges</h3>
+    <p>Tout litige est soumis au droit suisse ou européen, selon le pays de résidence du consommateur.</p>
+
+    <p>Dernière mise à jour : {{ 2025 }}</p>
+</section>
+{% endblock %}

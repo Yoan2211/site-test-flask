@@ -1,14 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Gobelet personnalisé{% endblock %}
+
 {% block content %}
 <div class="container gobelet-container">
     <div class="image-box">
-        <img alt="Gobelet personnalisé" src="{{ url_for('static', filename='img/gobelet.jpg') }}">
+        <img id="cup-preview"
+             alt="Aperçu gobelet"
+             src="{{ url_for('static', filename='img/gobelets/gobelet_blanc.png') }}"
+             style="max-width:300px; border-radius:10px;">
     </div>
+
 
     <div class="form-box">
         <h2>Gobelet personnalisé</h2>
 
+        {# ---- Infos Strava ---- #}
         {% if strava_connected %}
         <div class="alert alert-success" style="margin-top: 0.5rem;">
             🔗 Compte Strava connecté
@@ -22,10 +28,8 @@
         <p class="price">CHF 12.90 — TVA incluse</p>
         <p>Ajoutez votre performance ou le tracé de votre course pour personnaliser votre gobelet.</p>
 
-
-        <!-- --- Strava / Guest Logic --- -->
+        {# ---- Strava connecté ---- #}
         {% if strava_connected %}
-        <!-- ✅ Strava activement connecté -->
         {% if selected_activity %}
         <div class="strava-import-box">
             <h3>✅ Activité Strava importée</h3>
@@ -35,13 +39,9 @@
                 <li>Temps : {{ selected_activity.time }}</li>
                 <li>Allure : {{ selected_activity.pace }}/km</li>
             </ul>
-            {% if selected_activity.polyline %}
-            <p>Tracé GPS :</p>
-            <img src="{{ url_for('strava.track', activity_id=selected_activity.id) }}"
-                 alt="Tracé GPS" style="max-width:300px; border:1px solid #ccc; border-radius:8px;">
-            {% endif %}
+
             <p style="font-size:0.9em; color:#777;">
-                Les champs ci-dessous sont déjà remplis avec vos données Strava. Vous pouvez les modifier si nécessaire.
+                Les champs ci-dessous sont déjà remplis avec vos données Strava.
             </p>
         </div>
         {% else %}
@@ -52,13 +52,11 @@
         </div>
         {% endif %}
 
-        <!-- Bouton déconnexion Strava -->
+        {# Bouton déconnexion Strava #}
         <form action="{{ url_for('strava.disconnect') }}" method="post" style="margin-top:0.5rem;">
             <button type="submit" class="btn btn-danger">Déconnecter Strava</button>
         </form>
-
         {% else %}
-        <!-- 🚫 Pas connecté à Strava -->
         {% if not strava_just_disconnected %}
         <div class="choice-box" style="margin-bottom: 20px;">
             <h3>Connectez votre compte Strava</h3>
@@ -66,19 +64,21 @@
                 <button type="submit" style="border:none; background:none; padding:0; cursor:pointer;">
                     <img src="{{ url_for('static', filename='images/btn-strava@1x.png') }}"
                          srcset="{{ url_for('static', filename='images/btn-strava@1x.png') }} 1x,
-                                 {{ url_for('static', filename='images/btn-strava@2x.png') }} 2x"
+                           {{ url_for('static', filename='images/btn-strava@2x.png') }} 2x"
                          alt="Se connecter à Strava"
                          height="48">
                 </button>
             </form>
-            <p style="font-size:0.9em; color:#777;">Ou remplissez les champs manuellement ci-dessous.</p>
+            <p style="font-size:0.9em; color:#777;">
+                Ou remplissez les champs manuellement ci-dessous.
+            </p>
         </div>
         {% endif %}
         {% endif %}
 
-
-
+        {# ---- Formulaire principal ---- #}
         <form enctype="multipart/form-data" method="post">
+
             <label>Couleur</label>
             <select name="color" required>
                 <option value="blanc">Blanc</option>
@@ -92,30 +92,104 @@
 
             <fieldset>
                 <legend>Performance</legend>
-                <label>
-                    <input name="add_results" type="checkbox"
+
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input id="add-results" name="add_results" type="checkbox"
                            {% if selected_activity %}checked{% endif %}>
                     Ajouter mes résultats (+CHF 5)
                 </label>
 
                 <label>Temps</label>
-                <input name="time"
+                <input id="time-input"
+                       name="time"
                        value="{{ selected_activity.time if selected_activity else '' }}"
+                       type="text"
+                       inputmode="numeric"
+                       placeholder="hh:mm:ss ou mm:ss"
                        pattern="^([0-9]{1,2}:)?[0-5]?[0-9]:[0-5][0-9]$"
-                       placeholder="hh:mm:ss"
-                       title="Format attendu : hh:mm:ss ou mm:ss"
-                       type="text">
+                       title="Format attendu : hh:mm:ss ou mm:ss">
 
                 <label>Distance (km)</label>
-                <input min="0.01" name="distance" step="0.01"
+                <input id="distance-input"
+                       name="distance"
                        value="{{ selected_activity.distance if selected_activity else '' }}"
-                       title="Distance en kilomètres (ex: 5.00)"
-                       type="number">
+                       type="number"
+                       step="0.01"
+                       min="0.01"
+                       placeholder="ex. 5.00"
+                       title="Distance en kilomètres, ex. 5.00">
             </fieldset>
 
+
+            {% if selected_activity and selected_activity.polyline %}
+            <fieldset>
+                <legend>🗺️ Tracé GPS (+CHF 3)</legend>
+                <label style="display:flex; align-items:center; gap:8px; margin-bottom:0.5rem;">
+                    <input type="checkbox" name="add_route" checked>
+                    Afficher sur mon gobelet
+                </label>
+                <img src="{{ url_for('strava.track', activity_id=selected_activity.id) }}"
+                     alt="Tracé GPS"
+                     style="max-width:300px; border:1px solid #ccc; border-radius:8px;">
+            </fieldset>
+            {% endif %}
 
             <button type="submit">Ajouter au panier</button>
         </form>
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const colorSelect = document.querySelector("select[name='color']");
+        const formatSelect = document.querySelector("select[name='format']"); // si tu as un choix de format
+        const cupImg = document.getElementById("cup-preview");
+
+        function updateCupImage() {
+            const color = colorSelect ? colorSelect.value : "blanc";
+            const format = formatSelect ? formatSelect.value : null;
+
+            // 🔹 Cas 1 : format + couleur (si tu as les deux)
+            let filename = format ? `gobelet_${format}_${color}.png` : `gobelet_${color}.png`;
+
+            // 🔹 Met à jour l'image (attention au cache navigateur)
+            const newSrc = `/static/img/gobelets/${filename}?v=${Date.now()}`;
+            cupImg.src = newSrc;
+        }
+
+        if (colorSelect) colorSelect.addEventListener("change", updateCupImage);
+        if (formatSelect) formatSelect.addEventListener("change", updateCupImage);
+
+        // Fallback si l’image n’existe pas
+        cupImg.onerror = () => {
+            cupImg.src = "/static/img/gobelets/gobelet_blanc.png";
+        };
+
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const checkbox = document.getElementById("add-results");
+        const timeInput = document.getElementById("time-input");
+        const distanceInput = document.getElementById("distance-input");
+
+        // Fonction qui active/désactive les champs
+        const toggleRequired = () => {
+            const checked = checkbox.checked;
+
+            timeInput.required = checked;
+            distanceInput.required = checked;
+
+            timeInput.disabled = !checked;
+            distanceInput.disabled = !checked;
+
+            timeInput.style.opacity = checked ? "1" : "0.6";
+            distanceInput.style.opacity = checked ? "1" : "0.6";
+        };
+
+        // Exécuter au chargement + à chaque changement
+        toggleRequired();
+        checkbox.addEventListener("change", toggleRequired);
+    });
+</script>
+
 {% endblock %}

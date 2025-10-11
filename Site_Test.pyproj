@@ -47,6 +47,7 @@
     <Content Include="templates\admin_login.html" />
     <Content Include="templates\checkout_info.html" />
     <Content Include="templates\compte.html" />
+    <Content Include="templates\conditions.html" />
     <Content Include="templates\email.html" />
     <Content Include="templates\email_admin.html" />
     <Content Include="templates\failure.html" />
@@ -59,6 +60,8 @@
     <Content Include="templates\contact.html" />
     <Content Include="templates\home.html" />
     <Content Include="templates\login.html" />
+    <Content Include="templates\confidentialite.html" />
+    <Content Include="templates\mentions.html" />
     <Content Include="templates\performances.html" />
     <Content Include="templates\privacy.html" />
     <Content Include="templates\products.html" />
@@ -66,7 +69,6 @@
     <Content Include="templates\strava_activities.html" />
     <Content Include="templates\success.html" />
     <Content Include="templates\twint.html" />
-    <Content Include="templates\twint_personal.html" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="models\" />

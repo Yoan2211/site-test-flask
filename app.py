@@ -73,9 +73,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 MAX_CONTENT_LENGTH = app.config["MAX_CONTENT_LENGTH"]
 ALLOWED_ROUTE_EXT = app.config["ALLOWED_ROUTE_EXT"]
 
-USE_TWINT_PERSONAL = app.config["USE_TWINT_PERSONAL"]
-TWINT_PERSONAL_NUMBER = app.config["TWINT_PERSONAL_NUMBER"]
-
 
 # Prix
 PRICES = app.config["PRICES"]
@@ -143,14 +140,15 @@ def gobelet():
 
 
     if request.method == "POST":
+        print("🧾 FORM DATA:", request.form)
         color = request.form.get("color", "blanc")
         try:
             qty = max(1, int(request.form.get("qty", "1")))
         except ValueError:
             qty = 1
 
-        # Résultats (si l’utilisateur coche ou si Strava pré-rempli)
-        add_results = request.form.get("add_results") == "on" or bool(selected_activity)
+        # ✅ respecte le choix de l'utilisateur (les cases sont cochées par défaut en HTML)
+        add_results = request.form.get("add_results") == "on"
 
         results_data = None
         if add_results:
@@ -175,8 +173,12 @@ def gobelet():
                 "pace": pace,
             }
 
-        # Tracé (si polyline importé de Strava)
-        add_route = request.form.get("add_route") == "on" or ("polyline" in (selected_activity or {}))
+        # ✅ ajoute la route seulement si la case est cochée ET s'il y a vraiment une polyline
+        add_route = (
+            request.form.get("add_route") == "on"
+            and selected_activity
+            and selected_activity.get("polyline")
+        )
         route_url = None
         route_local = None
 
@@ -267,6 +269,18 @@ def contact():
         return redirect(url_for("contact"))
     return render_template("contact.html")
 
+
+@app.route("/mentions")
+def mentions():
+    return render_template("mentions.html")
+
+@app.route("/confidentialite")
+def confidentialite():
+    return render_template("confidentialite.html")
+
+@app.route("/conditions")
+def conditions():
+    return render_template("conditions.html")
 
 # ----------------- Paiement via Mollie (TWINT) -----------------
 # ------------------ Page checkout ------------------

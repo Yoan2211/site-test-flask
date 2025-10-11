@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Mentions légales & partenaires{% endblock %}
+
+{% block content %}
+<section class="legal-page" style="max-width:900px; margin:2rem auto; line-height:1.7; color:#ddd;">
+    <h2 style="color:#ff6600;">Mentions légales</h2>
+
+    <p>
+        Ce site est édité par <strong>Ma Boutique</strong>, un service de création de gobelets personnalisés
+        inspirés de vos parcours sportifs.
+    </p>
+    <p>
+        Contact : <a href="mailto:stravacup@gmail.com" style="color:#ff8800;">stravacup@gmail.com</a>
+    </p>
+
+    <hr style="margin:2rem 0; border-color:#333;">
+
+    <h3 style="color:#ff8800;">Partenaires et services utilisés</h3>
+
+    <ul style="list-style:none; padding:0;">
+        <li style="margin-bottom:1rem;">
+            💳 <strong>Mollie</strong> — Fournisseur de paiements sécurisés.<br>
+            <a href="https://www.mollie.com" target="_blank" rel="noopener" style="color:#ff6600;">www.mollie.com</a>
+        </li>
+        <li style="margin-bottom:1rem;">
+            ✉️ <strong>SendGrid</strong> — Service d’envoi d’e-mails transactionnels.<br>
+            <a href="https://sendgrid.com" target="_blank" rel="noopener" style="color:#ff6600;">www.sendgrid.com</a>
+        </li>
+        <li style="margin-bottom:1rem;">
+            🚴 <strong>Strava</strong> — Données importées via l’API Strava, avec votre autorisation OAuth.<br>
+            <a href="https://www.strava.com/legal/api" target="_blank" rel="noopener" style="color:#ff6600;">Politique développeur</a> |
+            <a href="https://www.strava.com/legal/brand-guidelines" target="_blank" rel="noopener" style="color:#ff6600;">Directives de marque</a><br>
+            <span style="font-size:0.85rem; color:#999;">Ce site n’est pas affilié, sponsorisé ni approuvé par Strava, Inc.</span>
+        </li>
+    </ul>
+
+    <hr style="margin:2rem 0; border-color:#333;">
+
+    <h2 style="color:#ff6600;">Protection des données (RGPD & LPD)</h2>
+
+    <h3 style="color:#ff8800;">Responsable du traitement</h3>
+    <p>
+        <strong>Ma Boutique</strong> — contact :
+        <a href="mailto:stravacup@gmail.com" style="color:#ff8800;">stravacup@gmail.com</a>
+    </p>
+
+    <h3 style="color:#ff8800;">Données traitées</h3>
+    <ul>
+        <li>Données de commande : nom, e-mail, adresse, produit, montant, statut.</li>
+        <li>Données Strava : activité, distance, durée, allure, tracé GPS (avec votre consentement OAuth).</li>
+        <li>Données de paiement : traitées par Mollie (aucune donnée de carte n’est stockée sur ce site).</li>
+        <li>Données e-mail : envoyées via SendGrid pour la confirmation et le suivi de commande.</li>
+    </ul>
+
+    <h3 style="color:#ff8800;">Finalités et bases légales</h3>
+    <ul>
+        <li><strong>Exécution du contrat</strong> : fabrication et livraison des commandes.</li>
+        <li><strong>Consentement</strong> : import et affichage de vos données Strava pour la personnalisation du gobelet.</li>
+        <li><strong>Obligation légale</strong> : facturation et conservation comptable.</li>
+    </ul>
+
+    <h3 style="color:#ff8800;">Durées de conservation</h3>
+    <ul>
+        <li>Commandes et factures : durée légale (10 ans maximum).</li>
+        <li>Données Strava : supprimées automatiquement après création du gobelet.</li>
+        <li>Cookies de session : supprimés à la fermeture du navigateur.</li>
+    </ul>
+
+    <h3 style="color:#ff8800;">Sous-traitants et destinataires</h3>
+    <ul>
+        <li><strong>Mollie</strong> — traitement sécurisé des paiements.</li>
+        <li><strong>SendGrid</strong> — gestion des e-mails transactionnels.</li>
+        <li><strong>Strava</strong> — fournisseur d’authentification et d’activités sportives.</li>
+    </ul>
+
+    <h3 style="color:#ff8800;">Transferts hors UE/Suisse</h3>
+    <p>
+        Certains partenaires (SendGrid, Strava) opèrent hors UE/Suisse. Des garanties équivalentes (Clauses Contractuelles Types)
+        assurent un niveau de protection adéquat des données.
+    </p>
+
+    <h3 style="color:#ff8800;">Vos droits</h3>
+    <ul>
+        <li>Accès, rectification, effacement, limitation, opposition, portabilité.</li>
+        <li>Retrait du consentement à tout moment (Strava OAuth).</li>
+        <li>
+            Réclamation auprès de la <a href="https://www.cnil.fr" target="_blank" rel="noopener" style="color:#ff6600;">CNIL</a> (UE)
+            ou du <a href="https://www.edoeb.admin.ch/edoeb/fr/home.html" target="_blank" rel="noopener" style="color:#ff6600;">PFPDT</a> (Suisse).
+        </li>
+    </ul>
+
+    <h3 style="color:#ff8800;">Cookies</h3>
+    <p>
+        Ce site utilise uniquement des cookies nécessaires au fonctionnement (session, panier, sécurité).
+        Aucun cookie publicitaire ou d’analyse n’est déposé sans votre consentement.
+    </p>
+
+    <h3 style="color:#ff8800;">Sécurité</h3>
+    <p>
+        Toutes les connexions sont chiffrées (HTTPS/TLS). Les données Strava et de paiement ne sont jamais stockées durablement.
+    </p>
+
+    <h3 style="color:#ff8800;">Mises à jour</h3>
+    <p>Dernière mise à jour : {{ 2025 }}</p>
+</section>
+{% endblock %}

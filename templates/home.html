@@ -1,6 +1,38 @@
 {% extends "base.html" %}
 {% block title %}Accueil{% endblock %}
+
 {% block content %}
-<h2>Bienvenue 👋</h2>
-<p>Découvrez nos produits personnalisés !</p>
+<!-- Hero principal (déjà dans base.html si tu le gardes là) -->
+{% if not request.path == url_for('home') %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Transforme ton parcours Strava en un gobelet unique 🏆</h1>
+        <p>Connecte ton compte Strava, choisis ton activité et imprime ton cup en 3D.</p>
+        <a href="{{ url_for('gobelet') }}" class="btn-cta">Créer ma cup</a>
+    </div>
+</section>
+{% endif %}
+
+<!-- Section Concept Produit -->
+<section class="concept-section reveal">
+    <div class="concept-text">
+        <h2>Une cup, une aventure.</h2>
+        <p>
+            Chaque activité Strava raconte une histoire. Une victoire, une montée difficile, ou un souvenir partagé entre amis.
+            Nous transformons ces moments en <strong>objets uniques</strong> grâce à l’impression 3D bi-couleur.
+        </p>
+        <p>
+            Nos gobelets, conçus et imprimés en France, reflètent la <strong>passion et la performance</strong> de chaque athlète.
+        </p>
+    </div>
+    <div class="concept-image">
+        <img src="{{ url_for('static', filename='img/about_cup.png') }}" alt="Gobelet personnalisé Strava">
+    </div>
+</section>
+
+<!-- Section Appel à l'action -->
+<section class="cta-section reveal">
+    <h2>Prêt à transformer ton prochain exploit en objet unique ?</h2>
+    <a href="{{ url_for('gobelet') }}" class="btn-cta">Personnaliser le mien</a>
+</section>
 {% endblock %}
