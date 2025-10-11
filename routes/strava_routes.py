@@ -7,8 +7,6 @@ from utils.image_utils import render_track_image
 import polyline
 import requests
 import uuid
-import base64
-from io import BytesIO
 
 strava_bp = Blueprint("strava", __name__)
 
@@ -348,7 +346,7 @@ def activities():
 # ==========================================================
 @strava_bp.route("/import/<activity_id>")
 def import_activity(activity_id):
-    """Importer une activité Strava si token disponible, sinon guest ne fait rien."""
+    """Importer une activité Strava pour personnalisation du gobelet."""
     user, token = StravaService.get_token_from_session()
 
     if not token:
@@ -362,7 +360,6 @@ def import_activity(activity_id):
 
     distance_km = act["distance"] / 1000
     total_seconds = act["moving_time"]
-
     pace = format_pace_mmss(total_seconds / distance_km) if distance_km > 0 else None
     time_str = (
         f"{total_seconds // 3600}:{(total_seconds % 3600) // 60:02d}:{total_seconds % 60:02d}"
@@ -370,31 +367,17 @@ def import_activity(activity_id):
         f"{total_seconds // 60}:{total_seconds % 60:02d}"
     )
 
-    selected = {
+    # On garde juste les infos légères
+    session["selected_activity"] = {
         "id": act["id"],
         "name": act["name"],
         "time": time_str,
         "distance": round(distance_km, 2),
         "pace": pace,
     }
+    # Sauvegarde l’ID pour générer le tracé plus tard
+    session["selected_activity_id"] = act["id"]
 
-    # ✅ Génération du tracé GPS s’il existe
-    if "map" in act and act["map"].get("summary_polyline"):
-        selected["polyline"] = act["map"]["summary_polyline"]
-
-        try:
-            coords = polyline.decode(selected["polyline"])
-            buf = render_track_image(coords, activity_id)
-            img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-            session["track_image_b64"] = img_b64
-        except Exception as e:
-            print("⚠️ Erreur lors de la génération du tracé :", e)
-            session.pop("track_image_b64", None)
-
-    else:
-        session.pop("track_image_b64", None)
-
-    session["selected_activity"] = selected
     flash("Activité importée pour personnalisation du gobelet ✅", "success")
     return redirect(url_for("gobelet"))
 
@@ -404,22 +387,23 @@ def import_activity(activity_id):
 # ==========================================================
 @strava_bp.route("/track/<activity_id>")
 def track(activity_id):
-    """Afficher tracé GPS si token disponible, sinon message guest."""
+    """Afficher le tracé GPS sans sauvegarde locale."""
     user, token = StravaService.get_token_from_session()
 
     if not token:
-        return "Pas de tracé GPS disponible pour les guests sans compte Strava.", 403
+        return "Pas de tracé GPS disponible pour les invités sans compte Strava.", 403
 
     activity = StravaService.fetch_activity(token, activity_id)
     if not activity or "map" not in activity or not activity["map"].get("summary_polyline"):
         return "Pas de tracé GPS disponible."
 
+    import polyline
     coords = polyline.decode(activity["map"]["summary_polyline"])
     buf = render_track_image(coords, activity_id)
-    img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-    session["track_image_b64"] = img_b64
 
-    return send_file(buf, mimetype="image/png", download_name=f"track_{activity_id}.png")
+    print(f"✅ Tracé Strava généré pour {activity_id} ({len(coords)} points)")
+    return send_file(buf, mimetype="image/png")
+
 
 # ==========================================================
 # 🧰 Debug (utile en dev)

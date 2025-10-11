@@ -121,21 +121,16 @@
             </fieldset>
 
 
-            {% if selected_activity and selected_activity.polyline %}
+            {% if session.get('selected_activity_id') %}
             <fieldset>
                 <legend>🗺️ Tracé GPS (+CHF 3)</legend>
                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:0.5rem;">
                     <input type="checkbox" name="add_route" checked>
                     Afficher sur mon gobelet
                 </label>
-
-                {% if session.track_image_b64 %}
-                <img src="data:image/png;base64,{{ session.track_image_b64 }}"
-                     alt="Tracé Strava"
+                <img src="{{ url_for('strava.track', activity_id=session.get('selected_activity_id')) }}"
+                     alt="Tracé GPS"
                      style="max-width:300px; border:1px solid #ccc; border-radius:8px;">
-                {% else %}
-                <p style="font-size:0.9em; color:#999;">Aucun tracé disponible pour cette activité.</p>
-                {% endif %}
             </fieldset>
             {% endif %}
 
