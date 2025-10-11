@@ -7,6 +7,8 @@ from utils.image_utils import render_track_image
 import polyline
 import requests
 import uuid
+import base64
+from io import BytesIO
 
 strava_bp = Blueprint("strava", __name__)
 
@@ -376,12 +378,26 @@ def import_activity(activity_id):
         "pace": pace,
     }
 
+    # ✅ Génération du tracé GPS s’il existe
     if "map" in act and act["map"].get("summary_polyline"):
         selected["polyline"] = act["map"]["summary_polyline"]
+
+        try:
+            coords = polyline.decode(selected["polyline"])
+            buf = render_track_image(coords, activity_id)
+            img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+            session["track_image_b64"] = img_b64
+        except Exception as e:
+            print("⚠️ Erreur lors de la génération du tracé :", e)
+            session.pop("track_image_b64", None)
+
+    else:
+        session.pop("track_image_b64", None)
 
     session["selected_activity"] = selected
     flash("Activité importée pour personnalisation du gobelet ✅", "success")
     return redirect(url_for("gobelet"))
+
 
 # ==========================================================
 # 🗺️ Tracé GPS
@@ -400,6 +416,8 @@ def track(activity_id):
 
     coords = polyline.decode(activity["map"]["summary_polyline"])
     buf = render_track_image(coords, activity_id)
+    img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+    session["track_image_b64"] = img_b64
 
     return send_file(buf, mimetype="image/png", download_name=f"track_{activity_id}.png")
 
