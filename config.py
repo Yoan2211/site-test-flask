@@ -76,9 +76,6 @@ class Config:
     else:
         MOLLIE_API_KEY = os.getenv("MOLLIE_API_KEY_TEST")
 
-    USE_TWINT_PERSONAL= os.getenv("USE_TWINT_PERSONAL", "False").lower() == "true"
-    TWINT_PERSONAL_NUMBER = os.getenv("TWINT_PERSONAL_NUMBER", "+41791086276")
-
     # URLs publiques
     PUBLIC_BASE_URL = PUBLIC_BASE_URL
     WEBHOOK_URL = os.getenv("WEBHOOK_URL") or f"{PUBLIC_BASE_URL}/webhook"
@@ -109,9 +106,9 @@ class Config:
 
     # Prix
     PRICES = {
-        "BASE": float(os.getenv("PRICE_BASE", 12.9)),
-        "RESULTS": float(os.getenv("PRICE_RESULTS", 5.0)),
-        "ROUTE": float(os.getenv("PRICE_ROUTE", 7.0)),
+        "BASE": float(os.getenv("PRICE_BASE")),
+        "RESULTS": float(os.getenv("PRICE_RESULTS")),
+        "ROUTE": float(os.getenv("PRICE_ROUTE")),
     }
 
     # ==========================================================

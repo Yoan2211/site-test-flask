@@ -380,3 +380,417 @@ button.validating {
         margin-bottom: 0.8rem;
     }
 
+/* ==== Hero section ==== */
+.hero {
+    position: relative;
+    background: linear-gradient(135deg, #111, #000);
+    padding: 6rem 2rem;
+    text-align: center;
+    color: #fff;
+    overflow: hidden;
+}
+
+    .hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url('/static/img/strava_map_bg.svg');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        opacity: 0.05;
+    }
+
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    animation: fadeInUp 1s ease-out both;
+}
+
+.hero h1 {
+    font-size: 2.5rem;
+    color: #ff6600;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    color: #ccc;
+    margin-bottom: 2rem;
+}
+
+.btn-cta {
+    background: linear-gradient(135deg, #ff6600, #ff8800);
+    color: #fff;
+    padding: 0.9rem 1.6rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+    .btn-cta:hover {
+        background: linear-gradient(135deg, #e65c00, #ff6600);
+        transform: translateY(-3px);
+    }
+
+/* ==== Navbar active link ==== */
+nav a.active {
+    border-bottom: 2px solid #ff6600;
+    padding-bottom: 0.2rem;
+}
+
+/* ==== Responsive header ==== */
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.logo a {
+    text-decoration: none;
+    color: #ff6600;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.logout-btn {
+    color: #ccc;
+}
+.reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.6s ease-out;
+}
+
+    .reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+/* ==== Page À propos ==== */
+.about-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    padding: 4rem 2rem;
+    background: #111;
+    color: #fff;
+    animation: fadeInUp 0.8s ease-out both;
+}
+
+.about-text {
+    flex: 1 1 400px;
+    max-width: 550px;
+}
+
+    .about-text h2 {
+        color: #ff6600;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .about-text p {
+        color: #ddd;
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+    }
+
+.about-cta {
+    margin-top: 2rem;
+}
+
+    .about-cta .btn-cta {
+        font-size: 1.1rem;
+        padding: 1rem 2rem;
+    }
+
+.about-image {
+    flex: 1 1 350px;
+    text-align: center;
+}
+
+    .about-image img {
+        max-width: 100%;
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(255, 165, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .about-image img:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 25px rgba(255, 165, 0, 0.35);
+        }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .about-section {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .about-text, .about-image {
+        max-width: 90%;
+    }
+
+        .about-text h2 {
+            font-size: 1.8rem;
+        }
+}
+/* ==== Section Concept (Accueil) ==== */
+.concept-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    padding: 4rem 2rem;
+    background: #111;
+    color: #fff;
+    animation: fadeInUp 0.8s ease-out both;
+}
+
+.concept-text {
+    flex: 1 1 400px;
+    max-width: 550px;
+}
+
+    .concept-text h2 {
+        color: #ff6600;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .concept-text p {
+        color: #ddd;
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+    }
+
+.concept-image {
+    flex: 1 1 350px;
+    text-align: center;
+}
+
+    .concept-image img {
+        max-width: 100%;
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(255, 165, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .concept-image img:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 25px rgba(255, 165, 0, 0.35);
+        }
+
+/* ==== CTA Section ==== */
+.cta-section {
+    text-align: center;
+    background: linear-gradient(135deg, #000, #111);
+    padding: 5rem 2rem;
+    color: #fff;
+}
+
+    .cta-section h2 {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+/* ==== Page À propos (Qui sommes-nous) ==== */
+.about-us-section {
+    padding: 4rem 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+    color: #fff;
+}
+
+    .about-us-section h2 {
+        color: #ff6600;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .about-us-section p {
+        font-size: 1.1rem;
+        color: #ddd;
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+        text-align: justify;
+    }
+
+.about-values {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.value-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.2);
+    text-align: center;
+    flex: 1 1 250px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+    .value-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(255, 165, 0, 0.3);
+    }
+
+    .value-card h3 {
+        color: #ff6600;
+        margin-bottom: 0.5rem;
+    }
+
+@media (max-width: 768px) {
+    .concept-section, .about-values {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+    .pagination span {
+        color: #ccc;
+        font-size: 1rem;
+    }
+
+    .pagination a.btn-cta {
+        padding: 0.6rem 1.2rem;
+        background: linear-gradient(135deg, #ff6600, #ff8800);
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+        .pagination a.btn-cta:hover {
+            background: linear-gradient(135deg, #e65c00, #ff6600);
+            transform: translateY(-2px);
+        }
+/* ==== Barre de filtres ==== */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    background: #1a1a1a;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(255, 165, 0, 0.1);
+}
+
+    .filters input,
+    .filters select {
+        padding: 0.5rem 0.8rem;
+        border: 1px solid #333;
+        border-radius: 6px;
+        background: #111;
+        color: #fff;
+        font-size: 0.95rem;
+    }
+
+        .filters input::placeholder {
+            color: #777;
+        }
+
+    .filters button {
+        padding: 0.6rem 1rem;
+        background: linear-gradient(135deg, #ff6600, #ff8800);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+        .filters button:hover {
+            background: linear-gradient(135deg, #e65c00, #ff6600);
+        }
+
+/* ==== Liste d'activités ==== */
+.activities-list {
+    list-style: none;
+    padding: 0;
+}
+
+    .activities-list li {
+        background: #1a1a1a;
+        color: #fff;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .activities-list li b {
+            color: #ff8800;
+        }
+
+    .activities-list a.import-link {
+        text-decoration: none;
+        color: #ff6600;
+        font-weight: 600;
+    }
+
+        .activities-list a.import-link:hover {
+            color: #fff;
+        }
+
+/* Pagination (déjà ajoutée avant) */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+input[type="checkbox"] {
+    accent-color: #ff6600;
+    transform: scale(1.2);
+    cursor: pointer;
+}
+footer {
+    background: #000;
+    color: #999;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    font-size: 0.9rem;
+    border-top: 1px solid #333;
+}
+
+    footer a {
+        color: #ff6600;
+        text-decoration: none;
+    }
+
+        footer a:hover {
+            color: #fff;
+        }
+

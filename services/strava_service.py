@@ -468,22 +468,48 @@ class StravaService:
 
     @staticmethod
     def fetch_activity(token: str, activity_id: str) -> dict | None:
+        """
+        Récupère les détails d'une activité Strava spécifique.
+        """
         headers = {"Authorization": f"Bearer {token}"}
         response = requests.get(
             f"https://www.strava.com/api/v3/activities/{activity_id}",
             headers=headers
         )
-        return response.json() if response.status_code == 200 else None
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"⚠️ Erreur Strava fetch_activity: {response.status_code}")
+            return None
 
     @staticmethod
-    def fetch_activities(token: str, per_page=10, page=1) -> list | None:
+    def fetch_all_activities(token: str, max_pages: int = 5, per_page: int = 100) -> list:
+        """
+        Récupère toutes les activités Strava d'un utilisateur (jusqu'à max_pages * per_page).
+        """
         headers = {"Authorization": f"Bearer {token}"}
-        response = requests.get(
-            "https://www.strava.com/api/v3/athlete/activities",
-            headers=headers,
-            params={"per_page": per_page, "page": page}
-        )
-        return response.json() if response.status_code == 200 else None
+        all_activities = []
+
+        for page in range(1, max_pages + 1):
+            response = requests.get(
+                "https://www.strava.com/api/v3/athlete/activities",
+                headers=headers,
+                params={"per_page": per_page, "page": page}
+            )
+
+            if response.status_code != 200:
+                print(f"⚠️ Erreur Strava page {page} : {response.status_code}")
+                break
+
+            data = response.json()
+            if not data:
+                break  # Plus d’activités à charger
+
+            all_activities.extend(data)
+
+        print(f"✅ {len(all_activities)} activités récupérées depuis Strava.")
+        return all_activities
+
 
     
     # ==========================================================

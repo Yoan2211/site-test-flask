@@ -46,20 +46,20 @@
         }
     </style>
 </head>
+
 <body>
     <header>
-        <div class="container">
-            <h1>Ma boutique</h1>
-            <nav style="display:flex; gap:1rem; align-items:center;">
-                <a href="{{ url_for('home') }}">Accueil</a>
-                <a href="{{ url_for('gobelet') }}">Produit</a>
-                <a href="{{ url_for('cart_view') }}">Panier</a>
-                <a href="{{ url_for('about') }}">À propos</a>
-                <a href="{{ url_for('contact') }}">Contact</a>
+        <div class="container header-inner">
+            <h1 class="logo"><a href="{{ url_for('home') }}">CupMyRun</a></h1>
+            <nav>
+                <a href="{{ url_for('home') }}" class="{{ 'active' if request.path == url_for('home') else '' }}">Accueil</a>
+                <a href="{{ url_for('gobelet') }}" class="{{ 'active' if request.path == url_for('gobelet') else '' }}">Produit</a>
+                <a href="{{ url_for('cart_view') }}" class="{{ 'active' if request.path == url_for('cart_view') else '' }}">Panier</a>
+                <a href="{{ url_for('about') }}" class="{{ 'active' if request.path == url_for('about') else '' }}">À propos</a>
+                <a href="{{ url_for('contact') }}" class="{{ 'active' if request.path == url_for('contact') else '' }}">Contact</a>
 
-                <!-- Bouton logout si utilisateur connecté -->
                 {% if session.get('user_id') %}
-                <a href="{{ url_for('auth.compte') }}">Mon Compte</a>
+                <a href="{{ url_for('auth.compte') }}">Mon compte</a>
                 <a href="{{ url_for('auth.logout') }}" class="logout-btn">Se déconnecter</a>
                 {% else %}
                 <a href="{{ url_for('auth.login') }}">Connexion</a>
@@ -68,6 +68,16 @@
             </nav>
         </div>
     </header>
+
+    {% if request.path == url_for('home') %}
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Transforme ton parcours Strava en un gobelet unique 🏆</h1>
+            <p>Connecte ton compte Strava, choisis ton activité et imprime ton cup en 3D.</p>
+            <a href="{{ url_for('gobelet') }}" class="btn-cta">Créer ma cup</a>
+        </div>
+    </section>
+    {% endif %}
 
     <main>
         <!-- Messages flash -->
@@ -90,7 +100,23 @@
     </main>
 
     <footer>
-        &copy; {{ 2025 }} Ma boutique — Tous droits réservés
+        <p>&copy; {{ 2025 }} CupMyRun — Tous droits réservés</p>
+        <p style="font-size:0.8rem; color:#777;">
+            <a href="{{ url_for('mentions') }}" style="color:#ff6600; text-decoration:none;">Mentions légales</a> ·
+            <a href="{{ url_for('confidentialite') }}" style="color:#ff6600; text-decoration:none;">Confidentialité</a> ·
+            <a href="{{ url_for('conditions') }}" style="color:#ff6600; text-decoration:none;">Conditions de vente</a>
+        </p>
     </footer>
+
+
+    <script>
+        document.addEventListener("scroll", () => {
+            document.querySelectorAll('.reveal').forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight - 100) {
+                    el.classList.add('visible');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

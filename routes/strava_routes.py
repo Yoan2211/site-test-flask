@@ -270,33 +270,76 @@ def disconnect():
 # ==========================================================
 # 🏃 Liste des activités Strava
 # ==========================================================
+
 @strava_bp.route("/activities")
 def activities():
     """
-    Affiche les activités Strava si le token est disponible.
-    - Utilisateur connecté → token BDD
-    - Guest → token session
-    - Garde l'activité importée si existante
+    Affiche les activités Strava avec pagination et filtres.
     """
     user, token = StravaService.get_token_from_session()
-    print("DEBUG activities → user:", user, "token:", token)
     strava_connected = bool(token)
     activities = []
+    per_page = 20
+    page = int(request.args.get("page", 1))
+
+    # Filtres depuis l'URL
+    search = request.args.get("search", "").strip().lower()
+    min_distance_str = request.args.get("min_distance", "").strip()
+    max_distance_str = request.args.get("max_distance", "").strip()
+
+    min_distance = float(min_distance_str) if min_distance_str else 0
+    max_distance = float(max_distance_str) if max_distance_str else 0
+
+    activity_type = request.args.get("type", "Run")
 
     if strava_connected:
-        all_activities = StravaService.fetch_activities(token) or []
-        # Filtre uniquement les courses
-        activities = [act for act in all_activities if act.get("type") == "Run"]
+        all_activities = StravaService.fetch_all_activities(token, max_pages=5, per_page=100) or []
+        runs = [act for act in all_activities if act.get("type") == activity_type]
 
-    # Récupère l'activité importée en session (guest ou user)
+        # Appliquer les filtres
+        filtered = []
+        for act in runs:
+            dist_km = act["distance"] / 1000
+            name = act["name"].lower()
+            if search and search not in name:
+                continue
+            if min_distance and dist_km < min_distance:
+                continue
+            if max_distance and dist_km > max_distance:
+                continue
+            filtered.append(act)
+
+        # Pagination
+        total = len(filtered)
+        start = (page - 1) * per_page
+        end = start + per_page
+        activities = filtered[start:end]
+
+        has_prev = page > 1
+        has_next = end < total
+
+    else:
+        has_prev = has_next = False
+        total = 0
+        search = ""
+        activity_type = "Run"
+
     selected_activity = session.get("selected_activity")
 
     return render_template(
         "strava_activities.html",
         activities=activities,
         strava_connected=strava_connected,
-        selected_activity=selected_activity
+        selected_activity=selected_activity,
+        page=page,
+        has_prev=has_prev,
+        has_next=has_next,
+        search=search,
+        min_distance=min_distance,
+        max_distance=max_distance,
+        activity_type=activity_type
     )
+
 
 # ==========================================================
 # 🏁 Import d’une activité

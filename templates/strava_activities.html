@@ -3,16 +3,42 @@
 <h2>Choisissez une activité à importer 🏃‍♀️</h2>
 
 {% if strava_connected %}
-<ul>
+<!-- Barre de filtres -->
+<form method="get" action="{{ url_for('strava.activities') }}" class="filters">
+    <input type="text" name="search" placeholder="Rechercher une activité..." value="{{ search }}">
+    <select name="type">
+        <option value="Run" {% if activity_type=='Run' %}selected{% endif %}>Course</option>
+        <option value="Ride" {% if activity_type=='Ride' %}selected{% endif %}>Vélo</option>
+        <option value="Walk" {% if activity_type=='Walk' %}selected{% endif %}>Marche</option>
+    </select>
+    <input type="number" name="min_distance" step="0.1" placeholder="Distance min (km)" value="{{ min_distance if min_distance > 0 else '' }}">
+    <input type="number" name="max_distance" step="0.1" placeholder="Distance max (km)" value="{{ max_distance if max_distance > 0 else '' }}">
+    <button type="submit" class="btn-cta">Filtrer</button>
+</form>
+
+<ul class="activities-list">
     {% for act in activities %}
     <li>
         <b>{{ act.name }}</b> — {{ (act.distance/1000)|round(2) }} km — {{ (act.moving_time/60)|round }} min
-        <a href="{{ url_for('strava.import_activity', activity_id=act.id) }}">Importer sur mon gobelet</a>
+        <a href="{{ url_for('strava.import_activity', activity_id=act.id) }}" class="import-link">Importer</a>
     </li>
+    {% else %}
+    <li>Aucune activité trouvée pour ces filtres.</li>
     {% endfor %}
 </ul>
+
+<!-- Pagination -->
+<div class="pagination">
+    {% if has_prev %}
+    <a href="{{ url_for('strava.activities', page=page-1, search=search, type=activity_type, min_distance=min_distance, max_distance=max_distance) }}" class="btn-cta">⬅️ Précédent</a>
+    {% endif %}
+    <span>Page {{ page }}</span>
+    {% if has_next %}
+    <a href="{{ url_for('strava.activities', page=page+1, search=search, type=activity_type, min_distance=min_distance, max_distance=max_distance) }}" class="btn-cta">Suivant ➡️</a>
+    {% endif %}
+</div>
+
 {% else %}
 <p>Connectez votre compte Strava pour voir vos activités et les importer sur votre gobelet.</p>
 {% endif %}
-
 {% endblock %}
