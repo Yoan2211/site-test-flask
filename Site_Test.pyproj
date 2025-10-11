@@ -29,6 +29,7 @@
     <Compile Include="routes\admin_routes.py" />
     <Compile Include="routes\auth.py" />
     <Compile Include="config.py" />
+    <Compile Include="routes\mollie.py" />
     <Compile Include="routes\user_routes.py" />
     <Compile Include="services\googledrive.py" />
     <Compile Include="models\db_database.py" />
@@ -65,6 +66,7 @@
     <Content Include="templates\strava_activities.html" />
     <Content Include="templates\success.html" />
     <Content Include="templates\twint.html" />
+    <Content Include="templates\twint_personal.html" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="models\" />

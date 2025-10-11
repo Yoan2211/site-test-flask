@@ -42,11 +42,17 @@ def create_app():
     from routes.auth import auth_bp
     from routes.user_routes import user_bp
     from routes.admin_routes import admin_bp, init_admin
+    from routes.mollie import mollie_bp
+
+
+
+
 
     app.register_blueprint(strava_bp, url_prefix="/strava")
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(mollie_bp)
 
     # --- Initialiser le panneau d'administration ---
     init_admin(app)
