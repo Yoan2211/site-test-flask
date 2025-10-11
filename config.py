@@ -85,6 +85,10 @@ class Config:
     STRAVA_CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
     STRAVA_REDIRECT_URI = os.getenv("STRAVA_REDIRECT_URI")
 
+    SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
+    SESSION_PERMANENT = os.getenv("SESSION_PERMANENT", "False").lower() == "true"
+    PERMANENT_SESSION_LIFETIME = int(os.getenv("PERMANENT_SESSION_LIFETIME", 3600))
 
 
     # SendGrid
