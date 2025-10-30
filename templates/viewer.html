@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Aperçu STL{% endblock %}
+
+{% block content %}
+<div class="container text-center">
+    <h2 style="color:#FC5200; margin-top:20px;">🧩 Aperçu du fichier STL</h2>
+    <div id="stl-viewer"
+         data-stl-url="{{ stl_url }}"
+         style="width:100%;height:500px;border:2px solid #FC5200;border-radius:10px;background:#000;margin-top:20px;">
+    </div>
+</div>
+
+<!-- Librairies Three.js -->
+<script src="https://unpkg.com/three@0.138.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.138.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://unpkg.com/three@0.138.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('stl-viewer');
+    const stlUrl = container.dataset.stlUrl;
+    if (!stlUrl) return;
+
+    // --- SCÈNE ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    // --- CAMÉRA ---
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 10000);
+    camera.position.set(0, 0, 200);
+
+    // --- RENDERER ---
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    // --- LUMIÈRES ---
+    scene.add(new THREE.AmbientLight(0x404040));
+    const light1 = new THREE.DirectionalLight(0xffffff, 1);
+    light1.position.set(1, 1, 1);
+    scene.add(light1);
+
+    // --- CONTRÔLES ---
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.5;
+
+    // --- CHARGEMENT STL ---
+    const loader = new THREE.STLLoader();
+    loader.load(stlUrl, (geometry) => {
+        geometry.center();
+        geometry.computeBoundingBox();
+        const size = new THREE.Vector3();
+        geometry.boundingBox.getSize(size);
+
+        const scale = 200 / (Math.max(size.x, size.y, size.z) || 1);
+        const material = new THREE.MeshLambertMaterial({ color: 0xfc5200 });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.scale.set(scale, scale, scale);
+        scene.add(mesh);
+
+        camera.lookAt(mesh.position);
+
+        const animate = () => {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        };
+        animate();
+    });
+});
+</script>
+{% endblock %}

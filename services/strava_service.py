@@ -511,7 +511,47 @@ class StravaService:
         return all_activities
 
 
-    
+    # ==========================================================
+    # 🧩 Récupération du token Strava pour un order (user ou guest)
+    # ==========================================================
+    @staticmethod
+    def get_token_for_order(order):
+        """
+        Retourne (user, token) pour un order :
+        - tente d'abord le token user si user_id présent
+        - sinon (ou si token user absent), tente un token guest encore valide
+        """
+        from models.db_database import User, GuestStravaSession
+        import time
+
+        if not order:
+            print("⚠️ [get_token_for_order] Aucun order fourni.")
+            return None, None
+
+        # 1) Cas USER : si l'order a un user_id, on tente son token
+        if getattr(order, "user_id", None):
+            user = User.query.get(order.user_id)
+            if user:
+                token = StravaService.get_token(user)  # sans refresh automatique
+                if token:
+                    print(f"🟢 [get_token_for_order] Token Strava user trouvé pour {user.email}")
+                    return user, token
+                else:
+                    print(f"🔴 [get_token_for_order] Aucun token actif pour user {user.email}")
+
+        # 2) Cas GUEST : prendre la dernière session guest encore valide
+        guest_session = GuestStravaSession.query.order_by(GuestStravaSession.id.desc()).first()
+        if guest_session:
+            token = getattr(guest_session, "strava_access_token", None)
+            expires_at = getattr(guest_session, "strava_token_expires_at", None)
+            if token and expires_at and expires_at > time.time():
+                print(f"🟢 [get_token_for_order] Token guest actif trouvé pour guest_id={guest_session.guest_id}")
+                return None, token
+
+        print("🔴 [get_token_for_order] Aucun token Strava valide (ni user ni guest).")
+        return None, None
+
+
     # ==========================================================
     # 🔄 Migration d'une session guest vers un compte user
     # ==========================================================

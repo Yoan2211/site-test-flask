@@ -387,22 +387,143 @@ def import_activity(activity_id):
 # ==========================================================
 @strava_bp.route("/track/<activity_id>")
 def track(activity_id):
-    """Afficher le tracé GPS sans sauvegarde locale."""
-    user, token = StravaService.get_token_from_session()
+    """
+    Génère le tracé GPS Strava en SVG avec projection Mercator
+    → proportions et orientation identiques à la carte Strava
+    """
+    from flask import Response
+    import math, polyline
 
+    stroke_color = "#FC5200"  # orange Strava
+
+    # --- Récupération de l'activité ---
+    user, token = StravaService.get_token_from_session()
     if not token:
-        return "Pas de tracé GPS disponible pour les invités sans compte Strava.", 403
+        return Response("Non connecté à Strava", status=403)
 
     activity = StravaService.fetch_activity(token, activity_id)
-    if not activity or "map" not in activity or not activity["map"].get("summary_polyline"):
-        return "Pas de tracé GPS disponible."
+    if not activity or not activity.get("map") or not activity["map"].get("summary_polyline"):
+        return Response("Pas de tracé GPS disponible", status=404)
 
-    import polyline
     coords = polyline.decode(activity["map"]["summary_polyline"])
-    buf = render_track_image(coords, activity_id)
+    if not coords:
+        return Response("Tracé vide", status=404)
 
-    print(f"✅ Tracé Strava généré pour {activity_id} ({len(coords)} points)")
-    return send_file(buf, mimetype="image/png")
+    # --- Projection Mercator ---
+    def latlon_to_mercator(lat, lon):
+        R = 6378137.0  # rayon terrestre
+        x = math.radians(lon) * R
+        y = math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) * R
+        return x, y
+
+    merc_coords = [latlon_to_mercator(lat, lon) for lat, lon in coords]
+    xs = [x for x, _ in merc_coords]
+    ys = [y for _, y in merc_coords]
+
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+
+    width, height, margin = 600, 600, 10
+    W = width - 2 * margin
+    H = height - 2 * margin
+    span_x = max_x - min_x
+    span_y = max_y - min_y
+
+    # pour conserver les proportions
+    scale = min(W / span_x, H / span_y)
+
+    pts = []
+    for x, y in merc_coords:
+        px = margin + (x - min_x) * scale
+        py = margin + (max_y - y) * scale  # inversion verticale
+        pts.append((px, py))
+
+    # --- Génération SVG ---
+    points_attr = " ".join(f"{round(x,1)},{round(y,1)}" for x, y in pts)
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">
+  <rect x="0" y="0" width="{width}" height="{height}" fill="white" stroke="lightgray"/>
+  <polyline points="{points_attr}" fill="none" stroke="{stroke_color}" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+</svg>"""
+
+    return Response(svg, mimetype="image/svg+xml")
+
+# ==========================================================
+# 📦 Export STL du tracé GPS
+# ==========================================================
+@strava_bp.route("/track_stl/<activity_id>")
+def track_stl(activity_id):
+    import io, math, polyline, trimesh
+    from flask import Response
+
+    print(f"\n🟢 [DEBUG] Génération STL pour activité {activity_id}")
+
+    user, token = StravaService.get_token_from_session()
+    if not token:
+        return Response("Non connecté à Strava", status=403)
+
+    activity = StravaService.fetch_activity(token, activity_id)
+    poly = activity.get("map", {}).get("summary_polyline")
+    if not poly:
+        return Response("Pas de tracé GPS", status=404)
+
+    coords = polyline.decode(poly)
+    if not coords:
+        return Response("Tracé vide", status=404)
+    print(f"🟡 [DEBUG] Points GPS décodés : {len(coords)}")
+
+    # --- Projection Mercator ---
+    def latlon_to_mercator(lat, lon):
+        R = 6378137.0
+        x = math.radians(lon) * R
+        y = math.log(math.tan(math.pi/4 + math.radians(lat)/2)) * R
+        return x, y
+
+    merc = [latlon_to_mercator(lat, lon) for lat, lon in coords]
+    xs, ys = zip(*merc)
+    span_x, span_y = max(xs)-min(xs), max(ys)-min(ys)
+    scale = min(600/span_x, 600/span_y)
+    pts = [((x-min(xs))*scale, (y-min(ys))*scale, 0) for x, y in merc]
+
+    # --- Construction du tracé avec des petits cylindres ---
+    segments = []
+    radius = 1.0  # épaisseur du trait
+    for i in range(len(pts)-1):
+        p1, p2 = pts[i], pts[i+1]
+        v1, v2 = trimesh.util.unitize(trimesh.util.vector(p2) - trimesh.util.vector(p1), check=False)
+        height = math.dist(p1, p2)
+        cyl = trimesh.creation.cylinder(radius=radius, height=height, sections=8)
+        cyl.apply_translation([0, 0, height/2])
+        # orienter le cylindre selon la direction du segment
+        direction = [p2[j] - p1[j] for j in range(3)]
+        cyl.apply_transform(trimesh.geometry.align_vectors([0, 0, 1], direction))
+        cyl.apply_translation(p1)
+        segments.append(cyl)
+
+    if not segments:
+        return Response("Pas assez de points", status=400)
+
+    mesh = trimesh.util.concatenate(segments)
+
+    # Normaliser la taille
+    scale = 100 / max(mesh.extents)
+    mesh.apply_scale(scale)
+
+    print(f"✅ STL prêt : {len(mesh.vertices)} sommets, dimensions {mesh.extents}")
+
+    stl_bytes = io.BytesIO()
+    mesh.export(stl_bytes, file_type="stl")
+    stl_bytes.seek(0)
+    return Response(
+        stl_bytes,
+        mimetype="application/sla",
+        headers={"Content-Disposition": f"attachment; filename=track_{activity_id}.stl"}
+    )
+
+
+
+
+
 
 
 # ==========================================================

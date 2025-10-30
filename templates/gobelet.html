@@ -10,6 +10,132 @@
              style="max-width:300px; border-radius:10px;">
     </div>
 
+    {% if stl_url %}
+    <div class="mt-4">
+        <h3 class="mb-2" style="color:#FC5200;">🧩 Aperçu 3D du tracé</h3>
+
+        <div id="stl-viewer"
+             data-stl-url="{{ stl_url }}"
+             style="width:100%;height:400px;border:1px solid #444;border-radius:8px;background:#000;">
+        </div>
+    </div>
+
+    <!-- ✅ Librairies Three.js -->
+    <script src="https://unpkg.com/three@0.138.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://unpkg.com/three@0.138.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('stl-viewer');
+            const stlUrl = container.dataset.stlUrl;
+            if (!stlUrl) return;
+
+            // === SCÈNE ===
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            // === CAMÉRA ===
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 10000);
+            camera.position.set(0, 0, 200);
+
+            // === RENDERER ===
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio || 1);
+            container.appendChild(renderer.domElement);
+
+            // === LUMIÈRES ===
+            scene.add(new THREE.AmbientLight(0x404040));
+            const light1 = new THREE.DirectionalLight(0xffffff, 1);
+            light1.position.set(1, 1, 1);
+            scene.add(light1);
+
+            // === CONTRÔLES ===
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 1.2;
+
+            // === Fonction d'ajustement de la caméra ===
+            function fitCameraToObject(camera, object, controls, container, offset = 1.35) {
+                const box = new THREE.Box3().setFromObject(object);
+                const size = new THREE.Vector3();
+                const center = new THREE.Vector3();
+                box.getSize(size);
+                box.getCenter(center);
+
+                const maxSize = Math.max(size.x, size.y, size.z);
+                const fitHeightDistance = maxSize / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)));
+                const fitWidthDistance = fitHeightDistance / (container.clientHeight / container.clientWidth);
+                const distance = offset * Math.max(fitHeightDistance, fitWidthDistance);
+
+                const dir = new THREE.Vector3(1, 1, 1).normalize();
+                camera.position.copy(center).addScaledVector(dir, distance);
+
+                camera.near = Math.max(0.1, distance / 1000);
+                camera.far = distance * 10;
+                camera.updateProjectionMatrix();
+
+                if (controls) {
+                    controls.target.copy(center);
+                    controls.update();
+                }
+            }
+
+            // === CHARGEMENT STL ===
+            const loader = new THREE.STLLoader();
+            loader.load(stlUrl, (geometry) => {
+                console.log("✅ STL chargé, sommets:", geometry.attributes.position.count);
+
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshLambertMaterial({ color: 0xfc5200 });
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+
+                // 🔹 Ajuste l’échelle et centre
+                const bbox = new THREE.Box3().setFromObject(mesh);
+                const s = bbox.getSize(new THREE.Vector3());
+                const maxDim = Math.max(s.x, s.y, s.z) || 1;
+                const targetMax = 200;
+                mesh.scale.setScalar(targetMax / maxDim);
+
+                // 🔹 Recadre la caméra pour voir tout le tracé
+                fitCameraToObject(camera, mesh, controls, container, 1.4);
+
+                // === ANIMATION ===
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                };
+                animate();
+            }, undefined, (err) => {
+                console.error("❌ Erreur chargement STL:", err);
+            });
+
+            // === RESIZE ===
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            });
+        });
+    </script>
+
+
+    {% endif %}
+
+
+
+
+
+
+
+
 
     <div class="form-box">
         <h2>Gobelet personnalisé</h2>
@@ -121,18 +247,19 @@
             </fieldset>
 
 
-            {% if session.get('selected_activity_id') %}
+            {% if selected_activity and selected_activity.id %}
             <fieldset>
                 <legend>🗺️ Tracé GPS (+CHF 3)</legend>
                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:0.5rem;">
                     <input type="checkbox" name="add_route" checked>
                     Afficher sur mon gobelet
                 </label>
-                <img src="{{ url_for('strava.track', activity_id=session.get('selected_activity_id')) }}"
+                <img src="{{ url_for('strava.track', activity_id=selected_activity.id) }}"
                      alt="Tracé GPS"
-                     style="max-width:300px; border:1px solid #ccc; border-radius:8px;">
+                     style="max-width:600px; border:1px solid #ccc; border-radius:8px;">
             </fieldset>
             {% endif %}
+
 
 
             <button type="submit">Ajouter au panier</button>
