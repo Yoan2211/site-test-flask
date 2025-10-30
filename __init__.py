@@ -36,6 +36,7 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+
     # 5️⃣ Importer et enregistrer les blueprints
     # ⚠️ Ces imports DOIVENT être ici (pas en haut du fichier)
     from routes.strava_routes import strava_bp

@@ -89,6 +89,17 @@ if not (MOLLIE_API_KEY.startswith("test_") or MOLLIE_API_KEY.startswith("live_")
 mollie_client = Client()
 mollie_client.set_api_key(MOLLIE_API_KEY)
 # -------------------------------------------------------------------------------------------------------------
+# ==========================================================
+# 🧩 ROUTE TEST STL VIEWER
+# ==========================================================
+@app.route("/viewer")
+def stl_viewer():
+    """
+    Affiche un viewer Three.js pour un fichier STL (interne ou uploadé)
+    """
+    # Exemple de fichier statique
+    stl_url = url_for("static", filename="stl/track_sample.stl")
+    return render_template("viewer.html", stl_url=stl_url)
 
 # ----------------- Routes -----------------
 @app.route("/")
@@ -100,29 +111,28 @@ def home():
 # -------------------
 @app.route("/gobelet", methods=["GET", "POST"])
 def gobelet():
+
     selected_activity = None
-    user = None  # par défaut
-    strava_token = None  # token Strava disponible pour guest ou user
+    user = None
+    strava_token = None
     strava_connected = False
+
+    print("\n🟢 [DEBUG] --- Accès à /gobelet ---")
 
     # --- Cas utilisateur connecté ---
     if "user_id" in session:
         user = User.query.get(session["user_id"])
         if user:
-            # 🔹 Récupère un token actif
             strava_token = StravaService.get_token(user)
             strava_connected = bool(strava_token)
-        
-            # ✅ Strava considéré comme "lié" uniquement si un token actif est présent
             user_has_strava_linked = bool(user.strava_access_token)
-
-            # 🔹 Activité sélectionnée uniquement si token valide
             selected_activity = session.get("selected_activity") if strava_token else None
+            print(f"🟢 [DEBUG] Utilisateur connecté : {user.email if user else 'inconnu'}")
         else:
             session.pop("selected_activity", None)
             user_has_strava_linked = False
     else:
-        # Guest
+        # --- Cas invité (guest Strava) ---
         token = session.get("strava_token")
         expires_at = session.get("strava_expires_at", 0)
         if token and time.time() < expires_at:
@@ -130,24 +140,29 @@ def gobelet():
             strava_connected = True
             user_has_strava_linked = False
             selected_activity = session.get("selected_activity")
+            print("🟢 [DEBUG] Session Strava invitée active.")
         else:
             session.pop("selected_activity", None)
             session.pop("strava_token", None)
             session.pop("strava_expires_at", None)
             user_has_strava_linked = False
+            print("🔴 [DEBUG] Aucun token Strava valide en session.")
 
+    # --- LOG ACTIVITÉ ---
+    if selected_activity:
+        print(f"🟡 [DEBUG] Activité sélectionnée : {selected_activity.get('id')} / {selected_activity.get('name', 'N/A')}")
+    else:
+        print("🔴 [DEBUG] Aucune activité sélectionnée actuellement.")
 
-
-
+    # --- GESTION DU FORMULAIRE ---
     if request.method == "POST":
-        print("🧾 FORM DATA:", request.form)
+        print("🧾 [DEBUG] FORM DATA:", request.form)
         color = request.form.get("color", "blanc")
         try:
             qty = max(1, int(request.form.get("qty", "1")))
         except ValueError:
             qty = 1
 
-        # ✅ respecte le choix de l'utilisateur (les cases sont cochées par défaut en HTML)
         add_results = request.form.get("add_results") == "on"
 
         results_data = None
@@ -167,50 +182,34 @@ def gobelet():
                 if total_seconds > 0 and distance > 0:
                     pace = format_pace_mmss(total_seconds / distance)
 
-            results_data = {
-                "time": time_str,
-                "distance": distance,
-                "pace": pace,
-            }
+            results_data = {"time": time_str, "distance": distance, "pace": pace}
 
-        # ✅ ajoute la route seulement si la case est cochée ET s'il y a vraiment une polyline
-        add_route = (
-            request.form.get("add_route") == "on"
-            and selected_activity
-            and selected_activity.get("polyline")
-        )
+        add_route = request.form.get("add_route") == "on"
         route_url = None
         route_local = None
 
-        
         if add_route:
             if selected_activity and selected_activity.get("polyline"):
-                coords = polyline.decode(selected_activity["polyline"])
-                # Génère + sauvegarde dans static/imported_images/track_<id>.png
-                render_track_image(coords, str(selected_activity["id"]))
-
-                rel_path = f"imported_images/track_{selected_activity['id']}.png"  # relatif à /static
-                route_local = os.path.join("static", rel_path)
-                route_url = url_for("static", filename=rel_path)
+                route_url = url_for("strava.track", activity_id=selected_activity["id"])
+                route_local = None
             else:
-                # Cas upload fichier utilisateur (si tu le gères)
                 route_file = request.files.get("route_file")
                 if route_file:
-                    route_rel = save_route_file(route_file)     # ex "uploads/xxx.png"
+                    route_rel = save_route_file(route_file)
                     route_url = make_public_asset_url(route_rel)
                     route_local = os.path.join("static", route_rel)
 
-
-
-        # Prix
+        # Calcul prix
         unit = PRICES["BASE"]
         if add_results:
             unit += PRICES["RESULTS"]
         if add_route:
             unit += PRICES["ROUTE"]
         total = round(unit * qty, 2)
+        
+        activity_id_opt = selected_activity["id"] if (selected_activity and selected_activity.get("id")) else None
 
-        # Item panier
+        # Ajout panier
         item = {
             "id": uuid.uuid4().hex,
             "sku": "gobelet",
@@ -225,17 +224,36 @@ def gobelet():
                 "results": results_data,
                 "add_route": add_route,
                 "route_url": route_url,
-                "route_local": route_local, # pour mail/D
+                "route_local": route_local,
                 "from_strava": bool(selected_activity),
-            }
+                "activity_id": activity_id_opt
+            },
         }
 
         add_cart_item(item)
-        session.pop("selected_activity", None)  # vider après usage
+        session.pop("selected_activity", None)
         return redirect(url_for("cart_view"))
 
+    # --- AJOUT DU STL POUR LE VIEWER 3D ---
+    if selected_activity and selected_activity.get("id"):
+        stl_url = url_for("export_stl", activity_id=selected_activity["id"])
+        print(f"🟠 [DEBUG] URL STL générée : {stl_url}")
+    else:
+        stl_url = None
+        print("🔴 [DEBUG] Aucune activité -> pas d’URL STL")
+
     strava_just_disconnected = session.pop("strava_just_disconnected", False)
-    return render_template("gobelet.html", selected_activity=selected_activity, user=user, strava_connected=strava_connected,user_has_strava_linked=user_has_strava_linked)
+
+    print("✅ [DEBUG] Fin du traitement /gobelet.\n")
+    return render_template(
+        "gobelet.html",
+        selected_activity=selected_activity,
+        user=user,
+        strava_connected=strava_connected,
+        user_has_strava_linked=user_has_strava_linked,
+        stl_url=stl_url,
+    )
+
 
 @app.route("/cart")
 def cart_view():
@@ -282,536 +300,102 @@ def confidentialite():
 def conditions():
     return render_template("conditions.html")
 
-# ----------------- Paiement via Mollie (TWINT) -----------------
-# ------------------ Page checkout ------------------
-"""@app.route("/checkout", methods=["GET", "POST"])
-def checkout():
-    user = None
-    billing_info = None
-
-    # Récupérer les items du panier
-    items = get_cart_items()
-    if not items:
-        flash("Le panier est vide.", "error")
-        return redirect(url_for("cart_view"))
-
-    total = cart_total()
-    order_uuid = uuid.uuid4().hex  # seul identifiant de commande utilisé
-
-    # Cas 1 : utilisateur connecté
-    if "user_id" in session:
-        user = User.query.get(session["user_id"])
-        if not user:
-            flash("Utilisateur introuvable.", "error")
-            return redirect(url_for("cart_view"))  # pas /login pour ne pas bloquer guests
-
-        if not user.billing_info:
-            flash("Merci de remplir vos informations de facturation avant de payer.", "error")
-            return redirect(url_for("checkout_info"))
-
-        billing_info = user.billing_info
-
-    # Cas 2 : guest
-    else:
-        if "guest_billing" not in session:
-            flash("Merci de remplir vos informations de facturation avant de payer.", "error")
-            return redirect(url_for("checkout_info"))
-
-        billing_data = session["guest_billing"]
-
-        # Créer un objet temporaire pour Mollie
-        class TempBilling:
-            def __init__(self, data):
-                self.first_name = data.get("billing_firstname")
-                self.last_name = data.get("billing_lastname")
-                self.email = data.get("billing_email")
-                self.street = data.get("billing_address")
-                self.postal_code = data.get("billing_postal")
-                self.city = data.get("billing_city")
-                self.region = data.get("billing_canton")
-                self.country = data.get("billing_country")
-        billing_info = TempBilling(billing_data)
-
-    # Préparer les données pour Mollie
-    billing_data_mollie = {
-        "givenName": billing_info.first_name,
-        "familyName": billing_info.last_name,
-        "email": billing_info.email,
-        "streetAndNumber": billing_info.street,
-        "postalCode": billing_info.postal_code,
-        "city": billing_info.city,
-        "region": billing_info.region,
-        "country": billing_info.country
-    }
-
-    order_payload = {
-        "amount": {"currency": "CHF", "value": f"{total:.2f}"},
-        "orderNumber": order_uuid,
-        "redirectUrl": url_for("payment_success", _external=True),
-        "webhookUrl": WEBHOOK_URL,
-        "metadata": {
-            "order_id": order_uuid,
-            "items": items,
-            "total": total,
-            "currency": "CHF",
-        },
-        "locale": "fr_CH",
-        "method": "twint",
-        "billingAddress": billing_data_mollie,
-        "shippingAddress": billing_data_mollie,
-        "lines": []
-    }
-
-    # Ajouter les lignes de commande
-    for it in items:
-        line = {
-            "type": "physical",
-            "sku": it.get("sku"),
-            "name": it.get("name"),
-            "quantity": it.get("qty"),
-            "unitPrice": {"currency": "CHF", "value": f"{it.get('unit_price'):.2f}"},
-            "totalAmount": {"currency": "CHF", "value": f"{it.get('total'):.2f}"},
-            "vatRate": "0.00",
-            "vatAmount": {"currency": "CHF", "value": "0.00"},
-            "metadata": it.get("options", {}),
-        }
-        order_payload["lines"].append(line)
-
-    # Envoyer la commande à Mollie
+# ==========================================================
+# 📦 Export STL direct (navigateur)
+# ==========================================================
+@app.route("/strava/export_stl/<activity_id>")
+def export_stl(activity_id):
     try:
-        response = requests.post(
-            "https://api.mollie.com/v2/orders",
-            json=order_payload,
-            headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"}
-        )
-        response.raise_for_status()
-        mollie_order = response.json()
-    except requests.exceptions.RequestException as e:
-        flash(f"Erreur Mollie: {e}", "error")
-        print("❌ Mollie error:", e)
-        return redirect(url_for("cart_view"))
-
-    checkout_url = mollie_order["_links"]["checkout"]["href"]
-
-    # Stocker les infos de la dernière commande dans la session
-    session["last_order"] = {
-        "id": order_uuid,
-        "line_items": items,
-        "total": total,
-        "currency": "CHF",
-        "payment_url": checkout_url,
-    }
-    session["last_order_id"] = mollie_order["id"]
-
-    return redirect(checkout_url)
-
-# ------------------ Page infos de facturation ------------------
-@app.route("/checkout-info_original", methods=["GET", "POST"])
-def checkout_info_original():
-    user = None
-    billing_data = {}
-
-    # Si l'utilisateur est connecté, récupérer ses infos
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
-        if user and user.billing_info:
-            billing_data = {
-                "billing_firstname": user.billing_info.first_name,
-                "billing_lastname": user.billing_info.last_name,
-                "billing_email": user.billing_info.email,
-                "billing_address": user.billing_info.street,
-                "billing_postal": user.billing_info.postal_code,
-                "billing_city": user.billing_info.city,
-                "billing_canton": user.billing_info.region,
-                "billing_country": user.billing_info.country
-            }
-
-    if request.method == "POST":
-        # Récupérer les données du formulaire
-        billing_data = {
-            "billing_firstname": request.form.get("billing_firstname", "").strip(),
-            "billing_lastname": request.form.get("billing_lastname", "").strip(),
-            "billing_email": request.form.get("billing_email", "").strip(),
-            "billing_address": request.form.get("billing_address", "").strip(),
-            "billing_postal": request.form.get("billing_postal", "").strip(),
-            "billing_city": request.form.get("billing_city", "").strip(),
-            "billing_canton": request.form.get("billing_canton", "").strip(),
-            "billing_country": request.form.get("billing_country", "").strip()
-        }
-
-        # Validation basique
-        if not billing_data["billing_email"] or not billing_data["billing_firstname"] or not billing_data["billing_lastname"]:
-            flash("Merci de compléter vos informations de facturation.", "error")
-            return redirect(url_for("checkout_info"))
-
-        if user:
-            if user.billing_info:
-                # Mise à jour des colonnes existantes
-                user.billing_info.first_name = billing_data["billing_firstname"]
-                user.billing_info.last_name = billing_data["billing_lastname"]
-                user.billing_info.email = billing_data["billing_email"]
-                user.billing_info.street = billing_data.get("billing_address")
-                user.billing_info.postal_code = billing_data.get("billing_postal")
-                user.billing_info.city = billing_data.get("billing_city")
-                user.billing_info.region = billing_data.get("billing_canton")
-                user.billing_info.country = billing_data.get("billing_country")
-            else:
-                # Création d'un nouvel objet BillingInfo
-                billing_info = BillingInfo(
-                    user_id=user.id,
-                    first_name=billing_data["billing_firstname"],
-                    last_name=billing_data["billing_lastname"],
-                    email=billing_data["billing_email"],
-                    street=billing_data.get("billing_address"),
-                    postal_code=billing_data.get("billing_postal"),
-                    city=billing_data.get("billing_city"),
-                    region=billing_data.get("billing_canton"),
-                    country=billing_data.get("billing_country")
-                )
-                db.session.add(billing_info)
-
-            db.session.commit()
-        else:
-            # Guest : stocker dans la session
-            session['guest_billing'] = billing_data
-
-        flash("Informations de facturation enregistrées.", "success")
-        return redirect(url_for("checkout"))
-
-    return render_template("checkout_info.html", user=user, billing_data=billing_data)
-
-@app.route("/checkout-info", methods=["GET", "POST"])
-def checkout_info():
-    user = None
-    billing_data = {}
-
-    # --------------------------
-    # 1️⃣ Identifier l'utilisateur
-    # --------------------------
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
-
-        # Fusionner les infos guest si elles existent
-        guest_data = session.pop('guest_billing', None)
-        if guest_data:
-            if user.billing_info:
-                # Update des infos existantes
-                for field, key in [
-                    ("first_name", "billing_firstname"),
-                    ("last_name", "billing_lastname"),
-                    ("email", "billing_email"),
-                    ("street", "billing_address"),
-                    ("postal_code", "billing_postal"),
-                    ("city", "billing_city"),
-                    ("region", "billing_canton"),
-                    ("country", "billing_country")
-                ]:
-                    val = guest_data.get(key)
-                    if val:
-                        setattr(user.billing_info, field, val)
-            else:
-                # Créer un BillingInfo à partir des infos guest
-                billing_info = BillingInfo(
-                    user_id=user.id,
-                    first_name=guest_data.get("billing_firstname", ""),
-                    last_name=guest_data.get("billing_lastname", ""),
-                    email=guest_data.get("billing_email", ""),
-                    street=guest_data.get("billing_address"),
-                    postal_code=guest_data.get("billing_postal"),
-                    city=guest_data.get("billing_city"),
-                    region=guest_data.get("billing_canton"),
-                    country=guest_data.get("billing_country")
-                )
-                db.session.add(billing_info)
-            db.session.commit()
-
-        # Charger les infos du user pour pré-remplir le formulaire
-        if user.billing_info:
-            billing_data = {
-                "billing_firstname": user.billing_info.first_name,
-                "billing_lastname": user.billing_info.last_name,
-                "billing_email": user.billing_info.email,
-                "billing_address": user.billing_info.street,
-                "billing_postal": user.billing_info.postal_code,
-                "billing_city": user.billing_info.city,
-                "billing_canton": user.billing_info.region,
-                "billing_country": user.billing_info.country
-            }
-
-    # --------------------------
-    # 2️⃣ Sinon, vérifier guest
-    # --------------------------
-    elif "guest_billing" in session:
-        billing_data = session["guest_billing"]
-
-    # --------------------------
-    # 3️⃣ POST: sauvegarder les infos
-    # --------------------------
-    if request.method == "POST":
-        billing_data = {
-            "billing_firstname": request.form.get("billing_firstname", "").strip(),
-            "billing_lastname": request.form.get("billing_lastname", "").strip(),
-            "billing_email": request.form.get("billing_email", "").strip(),
-            "billing_address": request.form.get("billing_address", "").strip(),
-            "billing_postal": request.form.get("billing_postal", "").strip(),
-            "billing_city": request.form.get("billing_city", "").strip(),
-            "billing_canton": request.form.get("billing_canton", "").strip(),
-            "billing_country": request.form.get("billing_country", "").strip()
-        }
-
-        # Validation simple
-        if not billing_data["billing_email"] or not billing_data["billing_firstname"] or not billing_data["billing_lastname"]:
-            flash("Merci de compléter vos informations de facturation.", "error")
-            return redirect(url_for("checkout_info"))
-
-        # --------------------------
-        # 4️⃣ User connecté → update/create BillingInfo
-        # --------------------------
-        if user:
-            if user.billing_info:
-                for field, key in [
-                    ("first_name", "billing_firstname"),
-                    ("last_name", "billing_lastname"),
-                    ("email", "billing_email"),
-                    ("street", "billing_address"),
-                    ("postal_code", "billing_postal"),
-                    ("city", "billing_city"),
-                    ("region", "billing_canton"),
-                    ("country", "billing_country")
-                ]:
-                    setattr(user.billing_info, field, billing_data[key])
-            else:
-                billing_info = BillingInfo(
-                    user_id=user.id,
-                    first_name=billing_data["billing_firstname"],
-                    last_name=billing_data["billing_lastname"],
-                    email=billing_data["billing_email"],
-                    street=billing_data.get("billing_address"),
-                    postal_code=billing_data.get("billing_postal"),
-                    city=billing_data.get("billing_city"),
-                    region=billing_data.get("billing_canton"),
-                    country=billing_data.get("billing_country")
-                )
-                db.session.add(billing_info)
-            db.session.commit()
-
-        # --------------------------
-        # 5️⃣ Guest → stocker dans session
-        # --------------------------
-        else:
-            session['guest_billing'] = billing_data
-
-        flash("Informations de facturation enregistrées.", "success")
-        return redirect(url_for("checkout"))
-
-    return render_template("checkout_info.html", user=user, billing_data=billing_data)
-
-
-@app.route("/webhook", methods=["POST"])
-def mollie_webhook():
-    mollie_order_id = request.form.get("id")
-    if not mollie_order_id:
-        return "ID Mollie manquant", 400
-
-    try:
-        # 1️⃣ Récupération de la commande Mollie
-        response = requests.get(
-            f"https://api.mollie.com/v2/orders/{mollie_order_id}",
-            headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"}
-        )
-        response.raise_for_status()
-        order_data = response.json()
-        status = order_data.get("status")
-
-        # 2️⃣ Récupération du metadata
-        metadata = order_data.get("metadata", {})
-        internal_order_id = metadata.get("order_id")
-        items = metadata.get("items", [])
-        email_client = order_data.get("billingAddress", {}).get("email")
-
-        if not internal_order_id:
-            return "Erreur: internal_order_id manquant", 400
-
-        # 3️⃣ Vérifier ou créer l'utilisateur
-        billing = order_data.get("billingAddress", {})
-        user = None
-        if email_client:
-            user = User.query.filter_by(email=email_client).first()
-            if not user:
-                user = User(
-                    first_name=billing.get("givenName", ""),
-                    last_name=billing.get("familyName", ""),
-                    email=email_client,
-                    password=None  # guest, pas de mot de passe
-                )
-                db.session.add(user)
-                db.session.commit()
-                print(f"👤 Utilisateur guest créé : {email_client}")
-
-        # 4️⃣ Vérifier si la commande existe
-        order = Order.query.filter_by(order_number=internal_order_id).first()
-        if not order:
-            # Nouvelle commande
-            order = Order(
-                order_number=internal_order_id,
-                user_id=user.id if user else None,
-                amount=float(order_data["amount"]["value"]),
-                currency=order_data["amount"]["currency"],
-                status=status,
-                payment_date=datetime.utcnow() if status == "paid" else None,
-                billing_first_name=billing.get("givenName", ""),
-                billing_last_name=billing.get("familyName", ""),
-                billing_email=email_client,
-                billing_street=billing.get("streetAndNumber", ""),
-                billing_postal_code=billing.get("postalCode", ""),
-                billing_city=billing.get("city", ""),
-                billing_region=billing.get("region", ""),
-                billing_country=billing.get("country", "CH"),
-                processed=False,
-            )
-            db.session.add(order)
-            db.session.commit()
-            print(f"✅ Commande {internal_order_id} créée.")
-        else:
-            # Mettre à jour le statut et la date de paiement si nécessaire
-            if status == "paid" and not order.payment_date:
-                order.payment_date = datetime.utcnow()
-            order.status = status
-            db.session.commit()
-            print(f"🔄 Commande {internal_order_id} existante mise à jour : {status}")
-
-        # 5️⃣ Ne traiter que si payé et non encore traité
-        if status != "paid":
-            print(f"⚠️ Commande {internal_order_id} pas encore payée ({status}), on ignore.")
-            return "Commande non payée", 200
-
-        if order.processed:
-            print(f"🔁 Commande {internal_order_id} déjà traitée, on ignore.")
-            return "Déjà traité", 200
-
-        # 6️⃣ Export du fichier .txt
-        os.makedirs("exports", exist_ok=True)
-        txt_path = f"exports/commande_{internal_order_id}.txt"
-        with open(txt_path, "w", encoding="utf-8") as f:
-            f.write(json.dumps(order_data, indent=4, ensure_ascii=False))
-
-        # 7️⃣ Gestion images (route)
-        image_path = None
-        for item in items:
-            opts = item.get("options", {})
-            if opts.get("add_route") and opts.get("route_url"):
-                filename = opts["route_url"].split("/")[-1]
-                src = f"static/uploads/{filename}"
-                dst = f"imported_images/{filename}"
-                os.makedirs("imported_images", exist_ok=True)
-                if os.path.exists(src):
-                    with open(src, "rb") as s, open(dst, "wb") as d:
-                        d.write(s.read())
-                    image_path = dst
-                    photo = OrderPhoto(order_id=order.id, photo_url=image_path)
-                    db.session.add(photo)
-                    db.session.commit()
-                    print("🖼️ Image copiée et enregistrée en DB.")
-
-        
-        image_path = None
-        for item in items:
-            opts = item.get("options", {})
-            if opts.get("add_route"):
-                if opts.get("route_local") and os.path.exists(opts["route_local"]):
-                    src = opts["route_local"]
-                elif opts.get("route_url") and "/static/" in opts["route_url"]:
-                    # Reconstruit le chemin disque à partir de l’URL
-                    filename = opts["route_url"].split("/")[-1]
-                    if "imported_images" in opts["route_url"]:
-                        src = os.path.join("static", "imported_images", filename)
-                    else:
-                        src = os.path.join("static", "uploads", filename)
-                else:
-                    src = None
-
-                if src and os.path.exists(src):
-                    os.makedirs("imported_images", exist_ok=True)
-                    dst = os.path.join("imported_images", os.path.basename(src))
-                    shutil.copyfile(src, dst)
-                    image_path = dst
-
-                    photo = OrderPhoto(order_id=order.id, photo_url=image_path)
-                    db.session.add(photo)
-                    db.session.commit()
-                    print("🖼️ Image copiée et enregistrée en DB.")
-
-
-
-        # 8️⃣ Préparer dict pour emails
-        order_view = {
-            "id": order.order_number,
-            "currency": order.currency,
-            "total": float(order.amount),
-            "line_items": items,
-            "billingAddress": billing
-        }
-
-        # 9️⃣ Envoi emails
-        if email_client:
-            envoyer_email_sendgrid_Client(order=order_view, destinataire=email_client)
-        envoyer_email_sendgrid_Admin(order=order_view, destinataire="stravacup@gmail.com", txt_path=txt_path, image_path=image_path)
-
-        # 🔟 Upload Google Drive
-        try:
-            upload_to_google_drive_cmdFile(txt_path, os.path.basename(txt_path), internal_order_id)
-            if image_path and os.path.exists(image_path):
-                upload_to_google_drive_cmdFile(image_path, os.path.basename(image_path), internal_order_id)
-        except Exception as e:
-            print(f"⚠️ Erreur upload Google Drive : {e}")
-
-        # 11️⃣ Marquer comme traité
-        order.processed = True
-        db.session.commit()
-        print(f"✅ Commande {internal_order_id} traitée avec succès")
-
-        return "Webhook traité", 200
-
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Erreur Mollie webhook: {e}")
-        return f"Erreur Mollie: {e}", 500
+        stl_bytes = generate_stl_from_activity(activity_id, radius=1.0, target_max_size=100.0)
     except Exception as e:
-        print(f"❌ Erreur inattendue webhook: {e}")
-        return f"Erreur interne: {e}", 500
+        return Response(f"Erreur génération STL: {e}", status=400)
 
-@app.route("/payment/success", methods=["GET"])
-def payment_success():
-    order = session.get("last_order")
-    if not order:
-        flash("Commande introuvable.", "error")
-        return redirect(url_for("cart_view"))
+    filename = f"track_{activity_id}.stl"
+    return Response(
+        stl_bytes,
+        mimetype="application/sla",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
 
-    order_id = session.get("last_order_id")
-    status = session.get("last_order_status", "unknown")
+# === STL utils (Strava → STL) ===
+import io, math
+import trimesh
+from flask import Response
 
-    if order_id:
-        try:
-            mollie_order = mollie_client.orders.get(order_id)
-            status = mollie_order.status
-            session["last_order_status"] = status  # sync avec webhook
-        except Exception as e:
-            flash(f"Erreur lors de la vérification de la commande : {e}", "error")
-            return render_template("failure.html", order=order, status="erreur")
+def _latlon_to_mercator(lat, lon):
+    R = 6378137.0
+    x = math.radians(lon) * R
+    y = math.log(math.tan(math.pi/4 + math.radians(lat)/2)) * R
+    return x, y
 
-    if status == "paid":
-        flash("Commande payée ✅ Merci pour votre achat !", "success")
-        session["cart_items"] = []
-        return render_template("success.html", order=order)
+def generate_stl_from_activity(activity_id: str, radius=1.0, target_max_size=100.0) -> bytes:
+    """
+    Récupère l'activité Strava via StravaService, décode le summary_polyline,
+    crée un tracé 3D (segments cylindriques), normalise la taille, et renvoie un STL binaire (bytes).
+    """
+    # 1) Récup token session (user connecté ou guest)
+    user, token = StravaService.get_token_from_session()
+    if not token:
+        raise RuntimeError("Non connecté à Strava")
 
-    flash(f"Paiement non réussi (statut : {status})", "error")
-    return render_template("failure.html", order=order, status=status)
+    # 2) Fetch activité
+    activity = StravaService.fetch_activity(token, activity_id)
+    poly = (activity or {}).get("map", {}).get("summary_polyline")
+    if not poly:
+        raise RuntimeError("Pas de tracé GPS pour cette activité")
 
-@app.get("/webhook/ping")
-def webhook_ping():
-    return "pong", 200"""
+    coords = polyline.decode(poly)
+    if not coords or len(coords) < 2:
+        raise RuntimeError("Tracé insuffisant")
 
+    # 3) Projection + mise à l’échelle initiale 2D → 3D (z=0)
+    merc = [_latlon_to_mercator(lat, lon) for (lat, lon) in coords]
+    xs, ys = zip(*merc)
+    span_x, span_y = max(xs)-min(xs), max(ys)-min(ys)
+    if span_x == 0 or span_y == 0:
+        raise RuntimeError("Tracé dégénéré")
 
+    # Mise à l’échelle “carte” ~ 600, puis normalisation plus tard
+    scale_xy = min(600.0/span_x, 600.0/span_y)
+    pts = [((x-min(xs))*scale_xy, (y-min(ys))*scale_xy, 0.0) for (x, y) in merc]
 
+    # 4) Cylindres le long des segments
+    segments = []
+    for i in range(len(pts)-1):
+        p1, p2 = pts[i], pts[i+1]
+        # longueur
+        h = math.dist(p1, p2)
+        if h == 0:
+            continue
+        cyl = trimesh.creation.cylinder(radius=radius, height=h, sections=12)
+        # positionner son centre au milieu du segment
+        cyl.apply_translation([0, 0, h/2])
+
+        # orienter vers le vecteur segment
+        vec = [p2[j] - p1[j] for j in range(3)]
+        cyl.apply_transform(trimesh.geometry.align_vectors([0, 0, 1], vec))
+        # déplacer au départ
+        cyl.apply_translation(p1)
+        segments.append(cyl)
+
+    if not segments:
+        raise RuntimeError("Pas assez de segments pour générer le mesh")
+
+    mesh = trimesh.util.concatenate(segments)
+
+    # 5) Normalisation: plus grande dimension = target_max_size (ex: 100 mm)
+    max_extent = max(mesh.extents)
+    if max_extent == 0:
+        raise RuntimeError("Mesh vide")
+    mesh.apply_scale(target_max_size / max_extent)
+
+    # 6) Export STL binaire → bytes
+    buf = io.BytesIO()
+    mesh.export(buf, file_type="stl")  # binaire
+    buf.seek(0)
+    return buf.read()
 
 
 @app.before_request

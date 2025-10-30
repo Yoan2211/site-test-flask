@@ -14,6 +14,12 @@ from models.db_database import db, User, BillingInfo, Order, OrderPhoto
 from services.manage_sendgrid import envoyer_email_sendgrid_Client, envoyer_email_sendgrid_Admin
 from services.googledrive import upload_to_google_drive_cmdFile
 
+from services.strava_service import StravaService
+
+import math, polyline, trimesh
+from shapely.geometry import LineString
+from shapely.ops import unary_union
+
 mollie_bp = Blueprint("mollie", __name__)
 
 # ----------------- Helpers -----------------
@@ -95,7 +101,15 @@ def checkout():
         "orderNumber": order_uuid,
         "redirectUrl": url_for("mollie.payment_success", _external=True),
         "webhookUrl": WEBHOOK_URL,
-        "metadata": {"order_id": order_uuid, "items": items, "total": total, "currency": "CHF"},
+        "metadata": {
+            "order_id": order_uuid,
+            "items": items,
+            "total": total,
+            "currency": "CHF",
+            "guest_id": session.get("guest_id"),   
+            "user_id": session.get("user_id"),    
+        },
+
         "locale": "fr_CH",
         # Choix méthode laissé à la logique originelle (twint)
         #"method": "twint",
@@ -224,6 +238,9 @@ def mollie_webhook():
 
         metadata = order_data.get("metadata", {})
         internal_order_id = metadata.get("order_id")
+        guest_id = metadata.get("guest_id")
+        user_id = metadata.get("user_id")
+
         items = metadata.get("items", [])
         email_client = order_data.get("billingAddress", {}).get("email")
 
@@ -272,8 +289,12 @@ def mollie_webhook():
 
         # Gestion images
         image_path = None
+        activity_id = None
         for item in items:
             opts = item.get("options", {})
+            # 🟠 récupère l'activity_id du gobelet Strava
+            if opts.get("activity_id"):
+                activity_id = opts["activity_id"]
             if opts.get("add_route"):
                 if opts.get("route_local") and os.path.exists(opts["route_local"]):
                     src = opts["route_local"]
@@ -294,12 +315,88 @@ def mollie_webhook():
                     photo = OrderPhoto(order_id=order.id, photo_url=image_path)
                     db.session.add(photo)
                     db.session.commit()
+                # =====================================================
+        # 🧩 Génération du fichier STL pour le tracé Strava
+        # =====================================================
+        stl_path = None
+        if activity_id:
+            try:
+                print(f"🟢 [DEBUG] Génération STL webhook pour activité {activity_id}")
+               
+                user, token = StravaService.get_token_for_order(order)
 
-        order_view = {"id": order.order_number, "currency": order.currency, "total": float(order.amount), "line_items": items, "billingAddress": billing}
+                # Si aucun token n’a été trouvé via user_id, tente via guest_id du metadata
+                if not token and guest_id:
+                    from models.db_database import GuestStravaSession
+                    import time
+                    guest_entry = GuestStravaSession.query.filter_by(guest_id=guest_id).first()
+                    if guest_entry and guest_entry.strava_token and guest_entry.strava_token_expires_at > time.time():
+                        print(f"🟢 [DEBUG] Token Strava récupéré via guest_id {guest_id}")
+                        token = guest_entry.strava_token
 
+                if token:
+                    activity = StravaService.fetch_activity(token, activity_id)
+                    if activity and activity.get("map", {}).get("summary_polyline"):
+                        coords = polyline.decode(activity["map"]["summary_polyline"])
+                        if coords:
+                            # Projection Mercator (comme la route /track_stl)
+                            def latlon_to_mercator(lat, lon):
+                                R = 6378137.0
+                                x = math.radians(lon) * R
+                                y = math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) * R
+                                return x, y
+
+                            merc_coords = [latlon_to_mercator(lat, lon) for lat, lon in coords]
+                            xs, ys = zip(*merc_coords)
+                            span_x, span_y = max(xs) - min(xs), max(ys) - min(ys)
+                            scale = min(600 / span_x, 600 / span_y)
+                            pts = [( (x - min(xs)) * scale, (max(ys) - y) * scale) for x, y in merc_coords]
+
+                            line = LineString(pts)
+                            buffer = line.buffer(1.0, cap_style=1, join_style=1)
+                            geom = unary_union(buffer)
+
+                            if geom.is_empty:
+                                print("🔴 [DEBUG] Géométrie vide, STL non généré.")
+                            else:
+                                os.makedirs("static/stl", exist_ok=True)
+                                stl_path = os.path.join("static", "stl", f"track_{activity_id}.stl")
+                                mesh = trimesh.creation.extrude_polygon(geom, height=0.4)
+                                mesh.export(stl_path, file_type="stl")
+                                print(f"✅ [DEBUG] STL généré : {stl_path}")
+                        else:
+                            print("🔴 [DEBUG] Polyline vide, STL ignoré.")
+                    else:
+                        print("🔴 [DEBUG] Pas de polyline dans l'activité Strava.")
+                else:
+                    print("🔴 [DEBUG] Aucun token Strava pour l'utilisateur.")
+            except Exception as e:
+                current_app.logger.exception(f"Erreur génération STL: {e}")
+        else:
+            print("🔴 [DEBUG] Aucun activity_id, STL non généré.")
+
+        # 🔹 Vue finale envoyée aux e-mails
+        order_view = {
+            "id": order.order_number,
+            "currency": order.currency,
+            "total": float(order.amount),
+            "line_items": items,
+            "billingAddress": billing,
+            "activity_id": activity_id,   # ✅ pour le tracé Strava
+            "user_id": order.user_id,      # ✅ pour récupérer le token Strava
+            "options": {
+                "stl_path": stl_path  # ✅ ajout pour pièce jointe SendGrid
+            }
+        }
         if email_client:
             envoyer_email_sendgrid_Client(order=order_view, destinataire=email_client)
-        envoyer_email_sendgrid_Admin(order=order_view, destinataire=current_app.config.get("ADMIN_EMAIL", "stravacup@gmail.com"), txt_path=txt_path, image_path=image_path)
+        envoyer_email_sendgrid_Admin(
+            order=order_view,
+            destinataire="stravacup@gmail.com",
+            txt_path=txt_path
+        )
+
+
 
         try:
             upload_to_google_drive_cmdFile(txt_path, os.path.basename(txt_path), internal_order_id)
