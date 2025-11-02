@@ -95,9 +95,9 @@ class Config:
     SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
     ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
-    # Google Drive
-    GOOGLE_CLIENT_SECRET_FILE = os.getenv("GOOGLE_CLIENT_SECRET_FILE")
-    GOOGLE_DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.file']
+    # KDrive
+    INFOMANIAK_ACCESS_TOKEN = os.getenv("INFOMANIAK_ACCESS_TOKEN")
+    INFOMANIAK_DRIVE_ID = os.getenv("INFOMANIAK_DRIVE_ID")
 
     # Sessions
     SESSION_TIMEOUT_MINUTES = int(os.getenv("SESSION_TIMEOUT_MINUTES", 30))
@@ -110,9 +110,7 @@ class Config:
 
     # Prix
     PRICES = {
-        "BASE": float(os.getenv("PRICE_BASE")),
-        "RESULTS": float(os.getenv("PRICE_RESULTS")),
-        "ROUTE": float(os.getenv("PRICE_ROUTE")),
+        "BASE": float(os.getenv("PRICE_BASE"))
     }
 
     # ==========================================================

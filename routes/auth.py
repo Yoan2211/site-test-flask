@@ -14,7 +14,7 @@ def login():
         password = request.form.get("password")
 
         user = User.query.filter_by(email=email).first()
-        if not user or not check_password_hash(user.password, password):
+        if not user or not user.password or not check_password_hash(user.password, password):
             flash("Identifiants incorrects.", "error")
             return redirect(url_for("auth.login"))
 

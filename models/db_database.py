@@ -51,6 +51,7 @@ class Order(db.Model):
     __tablename__ = "orders"
 
     id = db.Column(db.Integer, primary_key=True)
+    mollie_id = db.Column(db.String(64), unique=True, nullable=True)
     order_number = db.Column(db.String(64), unique=True, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     amount = db.Column(db.Float, nullable=False)

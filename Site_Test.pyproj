@@ -38,8 +38,11 @@
     <Compile Include="models\db_database.py" />
     <Compile Include="services\manage_sendgrid.py" />
     <Compile Include="routes\strava_routes.py" />
+    <Compile Include="services\stl_manager.py" />
     <Compile Include="services\strava_service.py" />
     <Compile Include="services\user_service.py" />
+    <Compile Include="services\kdrive.py" />
+    <Compile Include="test_text_to_stl.py" />
     <Compile Include="utils\image_utils.py" />
     <Compile Include="utils\tts_utils.py" />
     <Compile Include="__init__.py" />

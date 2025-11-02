@@ -23,11 +23,12 @@ from datetime import timedelta
 from datetime import datetime
 import requests
 
+from services.stl_manager import generate_stl_from_activity
 
 
 # Logique métier (API, traitement, etc.)
-from services.manage_sendgrid import envoyer_email_sendgrid_Client, envoyer_email_sendgrid_Admin
-from services.googledrive import upload_to_google_drive_cmdFile
+from services.manage_sendgrid import envoyer_email_sendgrid_Client, envoyer_email_sendgrid_Admin, envoyer_email_contact_sendgrid
+from services.kdrive import upload_to_kdrive
 from services.strava_service import StravaService
 
 import polyline
@@ -199,15 +200,48 @@ def gobelet():
                     route_url = make_public_asset_url(route_rel)
                     route_local = os.path.join("static", route_rel)
 
-        # Calcul prix
+        # ✅ Calcul prix progressif selon le nombre d’options cochées
         unit = PRICES["BASE"]
+        options_selected = []
+
+        # Détecte les options activées
+        if request.form.get("add_text") == "on":
+            options_selected.append("text")
         if add_results:
-            unit += PRICES["RESULTS"]
+            options_selected.append("results")
         if add_route:
-            unit += PRICES["ROUTE"]
+            options_selected.append("route")
+
+        # Vérifie qu'au moins une option est cochée
+        if len(options_selected) == 0:
+            flash("⚠️ Vous devez choisir au moins une option (texte, résultats ou tracé GPS).", "error")
+            return redirect(url_for("gobelet"))
+
+        # Calcule les suppléments progressifs
+        if len(options_selected) >= 1:
+            unit += 2.9
+        if len(options_selected) >= 2:
+            unit += 2.9
+        if len(options_selected) >= 3:
+            unit += 1.9
+
         total = round(unit * qty, 2)
+
         
         activity_id_opt = selected_activity["id"] if (selected_activity and selected_activity.get("id")) else None
+        
+        # 🆕 --- Texte personnalisé ---
+        add_text = request.form.get("add_text") == "on"
+        line1 = (request.form.get("custom_text_line1") or "").strip()
+        line2 = (request.form.get("custom_text_line2") or "").strip()
+        custom_text = ""
+
+        if add_text:
+            # Concatène les lignes valides avec saut de ligne
+            custom_text = "\n".join([l for l in [line1, line2] if l]).strip()
+            print(f"🟠 [DEBUG] Texte personnalisé détecté : '{custom_text}'")
+        else:
+            print("🔹 [DEBUG] Aucun texte personnalisé saisi.")
 
         # Ajout panier
         item = {
@@ -220,6 +254,12 @@ def gobelet():
             "unit_price": round(unit, 2),
             "total": total,
             "options": {
+                # === Options texte ===
+                "add_text": add_text,
+                "custom_text_line1": line1,
+                "custom_text_line2": line2,
+                "custom_text": custom_text,
+                # === Options Strava & autres ===
                 "add_results": add_results,
                 "results": results_data,
                 "add_route": add_route,
@@ -280,12 +320,27 @@ def clear_cart():
 def about():
     return render_template("about.html")
 
+
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
     if request.method == "POST":
-        flash("Merci pour votre message !", "success")
+        name = request.form.get("name")
+        email = request.form.get("email")
+        message = request.form.get("message")
+
+        if not all([name, email, message]):
+            flash("Merci de remplir tous les champs.", "error")
+            return redirect(url_for("contact"))
+
+        if envoyer_email_contact_sendgrid(name, email, message):
+            flash("Merci pour votre message ! Nous vous répondrons rapidement.", "success")
+        else:
+            flash("Une erreur est survenue lors de l'envoi du message.", "error")
+
         return redirect(url_for("contact"))
+
     return render_template("contact.html")
+
 
 
 @app.route("/mentions")
@@ -303,99 +358,119 @@ def conditions():
 # ==========================================================
 # 📦 Export STL direct (navigateur)
 # ==========================================================
+from flask import Flask, render_template, request, redirect, url_for, session, Response
+from services.manage_sendgrid import envoyer_email_sendgrid_test
+from services.kdrive import upload_order_to_kdrive
+
+from flask import Response, request
+
+
 @app.route("/strava/export_stl/<activity_id>")
 def export_stl(activity_id):
+    """
+    Exporte l'activité Strava sous forme de STL téléchargeable.
+    """
     try:
-        stl_bytes = generate_stl_from_activity(activity_id, radius=1.0, target_max_size=100.0)
+        stl_bytes = generate_stl_from_activity(activity_id)
     except Exception as e:
+        print(f"❌ Erreur génération STL : {e}")
         return Response(f"Erreur génération STL: {e}", status=400)
 
     filename = f"track_{activity_id}.stl"
     return Response(
         stl_bytes,
         mimetype="application/sla",
-        headers={
-            "Content-Disposition": f'attachment; filename="{filename}"'
-        }
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
-# === STL utils (Strava → STL) ===
-import io, math
-import trimesh
-from flask import Response
 
-def _latlon_to_mercator(lat, lon):
-    R = 6378137.0
-    x = math.radians(lon) * R
-    y = math.log(math.tan(math.pi/4 + math.radians(lat)/2)) * R
-    return x, y
+from flask import Response, request, abort
+from test_text_to_stl import generate_txt2stl
+import hashlib, re, html
 
-def generate_stl_from_activity(activity_id: str, radius=1.0, target_max_size=100.0) -> bytes:
+
+@app.route("/text/send_test_stl")
+def send_test_stl():
     """
-    Récupère l'activité Strava via StravaService, décode le summary_polyline,
-    crée un tracé 3D (segments cylindriques), normalise la taille, et renvoie un STL binaire (bytes).
+    Génère un STL à partir du texte fourni et retourne son hash.
+    Ne fait plus aucun envoi d'email.
+    Utilisable via :
+      /text/send_test_stl?text=FINISHER+2025
+      /text/send_test_stl?custom_text_line1=FINISHER&custom_text_line2=10KM
     """
-    # 1) Récup token session (user connecté ou guest)
-    user, token = StravaService.get_token_from_session()
-    if not token:
-        raise RuntimeError("Non connecté à Strava")
+    text = request.args.get("text", "").strip()
+    line1 = request.args.get("custom_text_line1", "").strip()
+    line2 = request.args.get("custom_text_line2", "").strip()
 
-    # 2) Fetch activité
-    activity = StravaService.fetch_activity(token, activity_id)
-    poly = (activity or {}).get("map", {}).get("summary_polyline")
-    if not poly:
-        raise RuntimeError("Pas de tracé GPS pour cette activité")
+    # Combine les lignes si "text" est vide
+    if not text:
+        if line1 or line2:
+            text = "\n".join([l for l in [line1, line2] if l]).strip()
 
-    coords = polyline.decode(poly)
-    if not coords or len(coords) < 2:
-        raise RuntimeError("Tracé insuffisant")
+    if not text:
+        return "❌ Aucun texte fourni (ni text, ni custom_text_line1/line2)", 400
 
-    # 3) Projection + mise à l’échelle initiale 2D → 3D (z=0)
-    merc = [_latlon_to_mercator(lat, lon) for (lat, lon) in coords]
-    xs, ys = zip(*merc)
-    span_x, span_y = max(xs)-min(xs), max(ys)-min(ys)
-    if span_x == 0 or span_y == 0:
-        raise RuntimeError("Tracé dégénéré")
+    try:
+        print(f"🧱 [DEBUG] Génération STL test pour texte : '{text.replace(chr(10), ' / ')}'")
+        stl_hash = generer_test_stl(text)
+        escaped = html.escape(text)
+        return f"✅ STL généré avec succès !<br>Texte : {escaped}<br>Hash STL : {stl_hash}"
+    except Exception as e:
+        print(f"❌ Erreur /text/send_test_stl : {e}")
+        return f"❌ Erreur lors de la génération : {e}", 500
 
-    # Mise à l’échelle “carte” ~ 600, puis normalisation plus tard
-    scale_xy = min(600.0/span_x, 600.0/span_y)
-    pts = [((x-min(xs))*scale_xy, (y-min(ys))*scale_xy, 0.0) for (x, y) in merc]
 
-    # 4) Cylindres le long des segments
-    segments = []
-    for i in range(len(pts)-1):
-        p1, p2 = pts[i], pts[i+1]
-        # longueur
-        h = math.dist(p1, p2)
-        if h == 0:
-            continue
-        cyl = trimesh.creation.cylinder(radius=radius, height=h, sections=12)
-        # positionner son centre au milieu du segment
-        cyl.apply_translation([0, 0, h/2])
 
-        # orienter vers le vecteur segment
-        vec = [p2[j] - p1[j] for j in range(3)]
-        cyl.apply_transform(trimesh.geometry.align_vectors([0, 0, 1], vec))
-        # déplacer au départ
-        cyl.apply_translation(p1)
-        segments.append(cyl)
+def generer_test_stl(text: str):
+    """
+    Génère un STL à partir d’un texte simple.
+    Ne fait plus aucun envoi de mail.
+    Retourne le hash SHA256 du fichier STL généré.
+    """
+    print("🧱 [DEBUG] Génération STL en local...")
 
-    if not segments:
-        raise RuntimeError("Pas assez de segments pour générer le mesh")
+    if not text.strip():
+        raise ValueError("Texte vide — impossible de générer le STL.")
 
-    mesh = trimesh.util.concatenate(segments)
+    # Génération du STL
+    from test_text_to_stl import generate_txt2stl
+    stl_bytes = generate_txt2stl(text)
+    stl_hash = hashlib.sha256(stl_bytes).hexdigest()
 
-    # 5) Normalisation: plus grande dimension = target_max_size (ex: 100 mm)
-    max_extent = max(mesh.extents)
-    if max_extent == 0:
-        raise RuntimeError("Mesh vide")
-    mesh.apply_scale(target_max_size / max_extent)
+    safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", "_".join(text.splitlines()))[:50] or "text"
+    print(f"📎 STL généré : {safe_name}.stl ({len(stl_bytes)} octets)")
+    print(f"🔑 Hash SHA256 : {stl_hash}")
 
-    # 6) Export STL binaire → bytes
-    buf = io.BytesIO()
-    mesh.export(buf, file_type="stl")  # binaire
-    buf.seek(0)
-    return buf.read()
+    return stl_hash
+
+
+
+@app.route("/text/export_stl")
+def export_text_stl():
+    """
+    Génère et renvoie un fichier STL téléchargeable depuis le texte fourni.
+    Ne fait plus aucun envoi d'email.
+    """
+    text = request.args.get("text", "").strip()
+    if not text:
+        abort(400, "Aucun texte fourni")
+
+    safe_name = "_".join(text.splitlines())[:50]
+
+    try:
+        stl_data = generate_txt2stl(text)
+        print(f"✅ STL généré pour export : {safe_name}.stl ({len(stl_data)} octets)")
+    except Exception as e:
+        print("❌ Erreur STL :", e)
+        abort(500, str(e))
+
+    # 📦 Retour du STL au navigateur
+    return Response(
+        stl_data,
+        mimetype="application/vnd.ms-pki.stl",
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}.stl"'}
+    )
+
 
 
 @app.before_request

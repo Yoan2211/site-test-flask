@@ -50,7 +50,13 @@
 <body>
     <header>
         <div class="container header-inner">
-            <h1 class="logo"><a href="{{ url_for('home') }}">CupMyRun</a></h1>
+            <h1 class="logo">
+                <a href="{{ url_for('home') }}">
+                    <img src="{{ url_for('static', filename='img/logo_cupmyrun.png') }}"
+                         alt="CupMyRun"
+                         class="logo-img">
+                </a>
+            </h1>
             <nav>
                 <a href="{{ url_for('home') }}" class="{{ 'active' if request.path == url_for('home') else '' }}">Accueil</a>
                 <a href="{{ url_for('gobelet') }}" class="{{ 'active' if request.path == url_for('gobelet') else '' }}">Produit</a>
@@ -68,16 +74,6 @@
             </nav>
         </div>
     </header>
-
-    {% if request.path == url_for('home') %}
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Transforme ton parcours Strava en un gobelet unique 🏆</h1>
-            <p>Connecte ton compte Strava, choisis ton activité et imprime ton cup en 3D.</p>
-            <a href="{{ url_for('gobelet') }}" class="btn-cta">Créer ma cup</a>
-        </div>
-    </section>
-    {% endif %}
 
     <main>
         <!-- Messages flash -->
@@ -118,5 +114,27 @@
             });
         });
     </script>
+    <script>
+        document.addEventListener("scroll", () => {
+            const steps = document.querySelectorAll(".step");
+            const stepsContainer = document.querySelector(".steps");
+            let visibleCount = 0;
+
+            steps.forEach(step => {
+                const rect = step.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100) {
+                    step.classList.add("visible");
+                }
+            });
+
+            // Compter les étapes visibles
+            visibleCount = Array.from(steps).filter(s => s.classList.contains("visible")).length;
+
+            // Mettre à jour la ligne orange
+            stepsContainer.classList.remove("progress-1", "progress-2", "progress-3");
+            if (visibleCount > 0) stepsContainer.classList.add(`progress-${visibleCount}`);
+        });
+    </script>
+
 </body>
 </html>

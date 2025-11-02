@@ -6,9 +6,12 @@ from flask import Blueprint, current_app, session, request, url_for, redirect, r
 from datetime import datetime
 import uuid
 import os
+import io
 import json
 import requests
 import shutil
+
+from utils.tts_utils import extract_custom_text
 
 from models.db_database import db, User, BillingInfo, Order, OrderPhoto
 from services.manage_sendgrid import envoyer_email_sendgrid_Client, envoyer_email_sendgrid_Admin
@@ -131,6 +134,39 @@ def checkout():
             "metadata": it.get("options", {}),
         }
         order_payload["lines"].append(line)
+    
+    # ----------------------------------------------------
+    # 💾 Création de la commande en base (avant appel Mollie)
+    # ----------------------------------------------------
+    from models.db_database import Order
+
+    try:
+        # Vérifie qu'elle n'existe pas déjà (rare)
+        existing_order = Order.query.filter_by(order_number=order_uuid).first()
+        if not existing_order:
+            new_order = Order(
+                order_number=order_uuid,
+                user_id=session.get("user_id"),
+                amount=total,
+                currency="CHF",
+                status="pending",
+                billing_first_name=billing_info.first_name,
+                billing_last_name=billing_info.last_name,
+                billing_email=billing_info.email,
+                billing_street=getattr(billing_info, "street", ""),
+                billing_postal_code=getattr(billing_info, "postal_code", ""),
+                billing_city=getattr(billing_info, "city", ""),
+                billing_region=getattr(billing_info, "region", ""),
+                billing_country=getattr(billing_info, "country", "CH"),
+                processed=False,
+            )
+            db.session.add(new_order)
+            db.session.commit()
+            current_app.logger.info(f"🧾 Commande temporaire créée : {order_uuid}")
+        else:
+            current_app.logger.info(f"⚠️ Commande {order_uuid} déjà existante (skip création)")
+    except Exception as e:
+        current_app.logger.exception(f"Erreur création commande en base avant Mollie : {e}")
 
     # Appel Mollie
     try:
@@ -231,55 +267,93 @@ def mollie_webhook():
         return "ID Mollie manquant", 400
 
     try:
-        response = requests.get(f"https://api.mollie.com/v2/orders/{mollie_order_id}", headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"})
+        # 🔎 1️⃣ Récupération de la commande Mollie
+        response = requests.get(
+            f"https://api.mollie.com/v2/orders/{mollie_order_id}",
+            headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"}
+        )
         response.raise_for_status()
         order_data = response.json()
         status = order_data.get("status")
-
         metadata = order_data.get("metadata", {})
         internal_order_id = metadata.get("order_id")
-        guest_id = metadata.get("guest_id")
-        user_id = metadata.get("user_id")
+        mode = order_data.get("mode", "live")
 
-        items = metadata.get("items", [])
-        email_client = order_data.get("billingAddress", {}).get("email")
-
-        if not internal_order_id:
-            return "Erreur: internal_order_id manquant", 400
-
-        billing = order_data.get("billingAddress", {})
-        user = None
-        if email_client:
-            user = User.query.filter_by(email=email_client).first()
-            if not user:
-                user = User(first_name=billing.get("givenName", ""), last_name=billing.get("familyName", ""), email=email_client, password=None)
-                db.session.add(user)
-                db.session.commit()
-
+        # -------------------------------------------------------------
+        # 🔒 1️⃣ Vérification cohérence commande ↔ base de données
+        # -------------------------------------------------------------
         order = Order.query.filter_by(order_number=internal_order_id).first()
-        if not order:
-            order = Order(order_number=internal_order_id, user_id=user.id if user else None,
-                          amount=float(order_data["amount"]["value"]), currency=order_data["amount"]["currency"],
-                          status=status,
-                          payment_date=datetime.utcnow() if status == "paid" else None,
-                          billing_first_name=billing.get("givenName", ""), billing_last_name=billing.get("familyName", ""),
-                          billing_email=email_client, billing_street=billing.get("streetAndNumber", ""), billing_postal_code=billing.get("postalCode", ""),
-                          billing_city=billing.get("city", ""), billing_region=billing.get("region", ""), billing_country=billing.get("country", "CH"), processed=False)
-            db.session.add(order)
-            db.session.commit()
-        else:
-            if status == "paid" and not order.payment_date:
-                order.payment_date = datetime.utcnow()
-            order.status = status
-            db.session.commit()
 
-        if status != "paid":
-            current_app.logger.info(f"Commande {internal_order_id} pas encore payée ({status})")
+        if not order:
+            current_app.logger.warning(
+                f"🚨 Webhook ignoré : aucune commande trouvée avec order_number={internal_order_id} "
+                f"pour Mollie ID {mollie_order_id}"
+            )
+            return "Commande inconnue", 400
+
+        # Si déjà traitée, on stoppe
+        if order.processed:
+            current_app.logger.info(f"Webhook ignoré : commande {internal_order_id} déjà traitée.")
+            return "Déjà traité", 200
+
+        # Si incohérence Mollie ID → stoppe aussi
+        if order.mollie_id and order.mollie_id != mollie_order_id:
+            current_app.logger.warning(
+                f"⚠️ Incohérence Mollie ID : commande {order.order_number} "
+                f"liée à {order.mollie_id}, reçu {mollie_order_id}"
+            )
+            return "Mollie ID non conforme", 400
+
+        # ---------------------------------------------------------
+        # 🔒 Vérification renforcée du statut réel côté Mollie
+        # ---------------------------------------------------------
+        is_paid = False
+        payments_link = order_data.get("_links", {}).get("payments", {}).get("href")
+
+        if status == "paid" and payments_link:
+            payments_resp = requests.get(
+                payments_link,
+                headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"}
+            )
+            if payments_resp.status_code == 200:
+                payments_data = payments_resp.json()
+                payments_list = payments_data.get("data", [])
+                for p in payments_list:
+                    if p.get("status") == "paid" and p.get("paidAt"):
+                        is_paid = True
+                        break
+
+        # ✅ Tolère les paiements de test (pas de paidAt en sandbox)
+        if mode == "test" and status == "paid":
+            is_paid = True
+            current_app.logger.info(f"🧪 Paiement TEST accepté pour commande {internal_order_id}")
+
+        # 🚫 Bloque les paiements “paid” sans preuve réelle en live
+        if mode == "live" and status == "paid" and not is_paid:
+            current_app.logger.warning(
+                f"🚫 Paiement fantôme ignoré en mode live (status='paid' sans preuve de paiement) — ID {mollie_order_id}"
+            )
+            return "Fake paid ignored", 200
+
+        if status != "paid" or not is_paid:
+            current_app.logger.info(f"⏸ Commande {internal_order_id} ignorée (status={status})")
             return "Commande non payée", 200
 
-        if order.processed:
-            current_app.logger.info(f"Commande {internal_order_id} déjà traitée")
-            return "Déjà traité", 200
+        # ----------------------------------------------------
+        # ✅ 5️⃣ Paiement confirmé — mise à jour ou création
+        # ----------------------------------------------------
+        guest_id = metadata.get("guest_id")
+        user_id = metadata.get("user_id")
+        items = metadata.get("items", [])
+        email_client = order_data.get("billingAddress", {}).get("email")
+        billing = order_data.get("billingAddress", {})
+
+        # Associe l'ID Mollie et met à jour les infos
+        order.mollie_id = mollie_order_id
+        order.status = "paid"
+        order.payment_date = datetime.utcnow()
+        order.billing_email = email_client or order.billing_email
+        db.session.commit()
 
         # Export JSON local
         os.makedirs("exports", exist_ok=True)
@@ -287,128 +361,131 @@ def mollie_webhook():
         with open(txt_path, "w", encoding="utf-8") as f:
             f.write(json.dumps(order_data, indent=4, ensure_ascii=False))
 
-        # Gestion images
-        image_path = None
-        activity_id = None
-        for item in items:
-            opts = item.get("options", {})
-            # 🟠 récupère l'activity_id du gobelet Strava
-            if opts.get("activity_id"):
-                activity_id = opts["activity_id"]
-            if opts.get("add_route"):
-                if opts.get("route_local") and os.path.exists(opts["route_local"]):
-                    src = opts["route_local"]
-                elif opts.get("route_url") and "/static/" in opts.get("route_url", ""):
-                    filename = opts["route_url"].split("/")[-1]
-                    if "imported_images" in opts["route_url"]:
-                        src = os.path.join("static", "imported_images", filename)
-                    else:
-                        src = os.path.join("static", "uploads", filename)
-                else:
-                    src = None
-
-                if src and os.path.exists(src):
-                    os.makedirs("imported_images", exist_ok=True)
-                    dst = os.path.join("imported_images", os.path.basename(src))
-                    shutil.copyfile(src, dst)
-                    image_path = dst
-                    photo = OrderPhoto(order_id=order.id, photo_url=image_path)
-                    db.session.add(photo)
-                    db.session.commit()
-                # =====================================================
-        # 🧩 Génération du fichier STL pour le tracé Strava
-        # =====================================================
-        stl_path = None
-        if activity_id:
-            try:
-                print(f"🟢 [DEBUG] Génération STL webhook pour activité {activity_id}")
-               
-                user, token = StravaService.get_token_for_order(order)
-
-                # Si aucun token n’a été trouvé via user_id, tente via guest_id du metadata
-                if not token and guest_id:
-                    from models.db_database import GuestStravaSession
-                    import time
-                    guest_entry = GuestStravaSession.query.filter_by(guest_id=guest_id).first()
-                    if guest_entry and guest_entry.strava_token and guest_entry.strava_token_expires_at > time.time():
-                        print(f"🟢 [DEBUG] Token Strava récupéré via guest_id {guest_id}")
-                        token = guest_entry.strava_token
-
-                if token:
-                    activity = StravaService.fetch_activity(token, activity_id)
-                    if activity and activity.get("map", {}).get("summary_polyline"):
-                        coords = polyline.decode(activity["map"]["summary_polyline"])
-                        if coords:
-                            # Projection Mercator (comme la route /track_stl)
-                            def latlon_to_mercator(lat, lon):
-                                R = 6378137.0
-                                x = math.radians(lon) * R
-                                y = math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) * R
-                                return x, y
-
-                            merc_coords = [latlon_to_mercator(lat, lon) for lat, lon in coords]
-                            xs, ys = zip(*merc_coords)
-                            span_x, span_y = max(xs) - min(xs), max(ys) - min(ys)
-                            scale = min(600 / span_x, 600 / span_y)
-                            pts = [( (x - min(xs)) * scale, (max(ys) - y) * scale) for x, y in merc_coords]
-
-                            line = LineString(pts)
-                            buffer = line.buffer(1.0, cap_style=1, join_style=1)
-                            geom = unary_union(buffer)
-
-                            if geom.is_empty:
-                                print("🔴 [DEBUG] Géométrie vide, STL non généré.")
-                            else:
-                                os.makedirs("static/stl", exist_ok=True)
-                                stl_path = os.path.join("static", "stl", f"track_{activity_id}.stl")
-                                mesh = trimesh.creation.extrude_polygon(geom, height=0.4)
-                                mesh.export(stl_path, file_type="stl")
-                                print(f"✅ [DEBUG] STL généré : {stl_path}")
+            # Gestion images
+            image_path = None
+            activity_id = None
+            for item in items:
+                opts = item.get("options", {})
+                if opts.get("activity_id"):
+                    activity_id = opts["activity_id"]
+                if opts.get("add_route"):
+                    if opts.get("route_local") and os.path.exists(opts["route_local"]):
+                        src = opts["route_local"]
+                    elif opts.get("route_url") and "/static/" in opts.get("route_url", ""):
+                        filename = opts["route_url"].split("/")[-1]
+                        if "imported_images" in opts["route_url"]:
+                            src = os.path.join("static", "imported_images", filename)
                         else:
-                            print("🔴 [DEBUG] Polyline vide, STL ignoré.")
+                            src = os.path.join("static", "uploads", filename)
                     else:
-                        print("🔴 [DEBUG] Pas de polyline dans l'activité Strava.")
-                else:
-                    print("🔴 [DEBUG] Aucun token Strava pour l'utilisateur.")
-            except Exception as e:
-                current_app.logger.exception(f"Erreur génération STL: {e}")
-        else:
-            print("🔴 [DEBUG] Aucun activity_id, STL non généré.")
+                        src = None
 
-        # 🔹 Vue finale envoyée aux e-mails
-        order_view = {
-            "id": order.order_number,
-            "currency": order.currency,
-            "total": float(order.amount),
-            "line_items": items,
-            "billingAddress": billing,
-            "activity_id": activity_id,   # ✅ pour le tracé Strava
-            "user_id": order.user_id,      # ✅ pour récupérer le token Strava
-            "options": {
-                "stl_path": stl_path  # ✅ ajout pour pièce jointe SendGrid
+                    if src and os.path.exists(src):
+                        os.makedirs("imported_images", exist_ok=True)
+                        dst = os.path.join("imported_images", os.path.basename(src))
+                        shutil.copyfile(src, dst)
+                        image_path = dst
+                        photo = OrderPhoto(order_id=order.id, photo_url=image_path)
+                        db.session.add(photo)
+                        db.session.commit()
+
+            # =====================================================
+            # 🧩 Génération du fichier STL pour le tracé Strava
+            # =====================================================
+            from app import generate_stl_from_activity
+
+            stl_bytes = None
+            token = None
+            if activity_id:
+                try:
+                    print(f"🟢 [DEBUG] Génération STL webhook pour activité {activity_id}")
+
+                    user, token = StravaService.get_token_for_order(order)
+                    if not token and guest_id:
+                        from models.db_database import GuestStravaSession
+                        import time
+                        guest_entry = GuestStravaSession.query.filter_by(guest_id=guest_id).first()
+                        if guest_entry and guest_entry.strava_token and guest_entry.strava_token_expires_at > time.time():
+                            print(f"🟢 [DEBUG] Token Strava récupéré via guest_id {guest_id}")
+                            token = guest_entry.strava_token
+
+                    if token:
+                        stl_bytes = generate_stl_from_activity(activity_id, token=token)
+                        print(f"✅ [DEBUG] STL généré en mémoire ({len(stl_bytes)} octets)")
+                    else:
+                        print("🔴 [DEBUG] Aucun token Strava disponible pour l’utilisateur.")
+                except Exception as e:
+                    current_app.logger.exception(f"Erreur génération STL: {e}")
+            else:
+                print("🔴 [DEBUG] Aucun activity_id, STL non généré.")
+
+            order_view = {
+                "id": order.order_number,
+                "currency": order.currency,
+                "total": float(order.amount),
+                "line_items": items,
+                "billingAddress": billing,
+                "activity_id": activity_id,
+                "user_id": order.user_id,
+                "guest_id": guest_id,
+                "options": {
+                    "activity_id": activity_id,
+                    "strava_token": token,
+                }
             }
-        }
+            
+            # =====================================================
+            # 📤 UPLOAD DE LA COMMANDE SUR KDRIVE
+            # =====================================================
+            try:
+                from services.kdrive import upload_order_to_kdrive
+
+                txt_bytes = json.dumps(order_data, indent=4, ensure_ascii=False).encode("utf-8")
+                stl_bytes = stl_bytes or None
+
+                upload_order_to_kdrive(
+                    order_number=internal_order_id,
+                    txt_bytes=txt_bytes,
+                    stl_bytes=stl_bytes,
+                )
+
+                current_app.logger.info(f"✅ Commande {internal_order_id} transférée avec succès sur kDrive.")
+            except Exception as e:
+                current_app.logger.exception(f"❌ Erreur upload kDrive : {e}")
+
+            # ----------------------------------------------------
+            # ✅ 6️⃣ Marquer la commande comme traitée
+            # ----------------------------------------------------
+            order.processed = True
+            db.session.commit()
+            current_app.logger.info(f"✅ Webhook finalisé pour commande {internal_order_id}")
+
+        #!!!!!!!! Ne PAS mettre dans : "à l’intérieur du with open(...) as f:" sinon le fichier n’est pas encore fermé (le buffer pas flushé) quand tu le relis juste après
         if email_client:
+            # ✅ FUSION des options du premier item avec celles de la racine
+            if order_view.get("line_items"):
+                first_item = order_view["line_items"][0]
+                opts = first_item.get("options", {}) or {}
+
+                # Fusionne (sans écraser les clés déjà existantes comme activity_id)
+                order_view["options"].update({
+                    k: v for k, v in opts.items()
+                    if v and k not in order_view["options"]
+                })
+
+            # ✅ Patch sécurité : si custom_text manquant mais lignes 1/2 présentes
+            text = extract_custom_text(order_view)
+            if text and not order_view["options"].get("custom_text"):
+                order_view["options"]["custom_text"] = text
+
+            # --- Envoi des emails ---
             envoyer_email_sendgrid_Client(order=order_view, destinataire=email_client)
-        envoyer_email_sendgrid_Admin(
-            order=order_view,
-            destinataire="stravacup@gmail.com",
-            txt_path=txt_path
-        )
+            envoyer_email_sendgrid_Admin(
+                order=order_view,
+                destinataire="stravacup@gmail.com",
+                txt_path=txt_path
+            )
 
-
-
-        try:
-            upload_to_google_drive_cmdFile(txt_path, os.path.basename(txt_path), internal_order_id)
-            if image_path and os.path.exists(image_path):
-                upload_to_google_drive_cmdFile(image_path, os.path.basename(image_path), internal_order_id)
-        except Exception:
-            current_app.logger.exception("Erreur upload Google Drive")
-
-        order.processed = True
-        db.session.commit()
-
-        return "Webhook traité", 200
 
     except requests.exceptions.RequestException as e:
         current_app.logger.exception("Erreur Mollie webhook")
@@ -416,6 +493,8 @@ def mollie_webhook():
     except Exception as e:
         current_app.logger.exception("Erreur inattendue webhook")
         return f"Erreur interne: {e}", 500
+
+    return "OK", 200
 
 
 # ----------------- Route : Success -----------------
@@ -429,3 +508,5 @@ def payment_success():
     flash("Commande payée ✅ Merci pour votre achat !", "success")
     session["cart_items"] = []
     return render_template("success.html", order=order)
+
+

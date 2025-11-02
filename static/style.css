@@ -50,7 +50,6 @@ footer {
     font-size: 0.9rem;
     border-top: 1px solid #333;
 }
-
 /* ---- Produit ---- */
 .product-page {
     display: flex;
@@ -103,6 +102,7 @@ footer {
         margin-bottom: 1rem;
     }
 
+/* ---- Formulaire produit ---- */
 .product-form label {
     display: block;
     margin-top: 1rem;
@@ -128,10 +128,11 @@ footer {
         outline: none;
     }
 
+/* ---- Encadrés ---- */
 .product-form fieldset {
     border: 1px solid #ddd;
     border-radius: 10px;
-    padding: 1rem;
+    padding: 1rem 1.2rem;
     margin-top: 1.5rem;
     background: #fefefe;
 }
@@ -142,6 +143,37 @@ footer {
     font-size: 1.1rem;
 }
 
+/* ✅ Alignement propre des checkbox */
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+    .checkbox-row input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #ff6600;
+        cursor: pointer;
+    }
+
+    .checkbox-row label {
+        cursor: pointer;
+        font-weight: 500;
+        color: #333;
+        user-select: none;
+    }
+
+/* Champs désactivés */
+.product-form input[disabled] {
+    background: #f8f8f8;
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* ---- Bouton principal ---- */
 button {
     margin-top: 2rem;
     width: 100%;
@@ -159,6 +191,7 @@ button {
         background: linear-gradient(135deg, #e65c00, #ff6600);
         transform: translateY(-2px);
     }
+
 
 /* ---- Responsive & Animations ---- */
 @media (max-width: 768px) {
@@ -195,7 +228,7 @@ button {
         box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
     }
 
-/* ---- Gobelet personnalis� ---- */
+/* ---- Gobelet personnalisé ---- */
 .container {
     display: flex;
     flex-wrap: wrap;
@@ -310,7 +343,7 @@ legend {
     margin: 0 auto;
 }
 
-/* ---- Animation d�apparition ---- */
+/* ---- Animation d’apparition ---- */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -380,7 +413,7 @@ button.validating {
         margin-bottom: 0.8rem;
     }
 
-/* ==== Hero section ==== */
+/* ==== Hero Section simplifiée ==== */
 .hero {
     position: relative;
     background: linear-gradient(135deg, #111, #000);
@@ -390,27 +423,26 @@ button.validating {
     overflow: hidden;
 }
 
-    .hero::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: url('/static/img/strava_map_bg.svg');
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: cover;
-        opacity: 0.05;
-    }
-
+.hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('/static/img/strava_map_bg.svg');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: 0.05;
+}
 
 .hero-content {
     position: relative;
     z-index: 1;
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    animation: fadeInUp 1s ease-out both;
+    padding: 4rem 2rem;
 }
 
 .hero h1 {
@@ -419,26 +451,148 @@ button.validating {
     margin-bottom: 1rem;
 }
 
-.hero p {
+.subtitle {
     font-size: 1.2rem;
     color: #ccc;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
+}
+/* ==== Étapes horizontales avec ligne orange animée ==== */
+.steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    flex-wrap: wrap;
+    position: relative;
+    margin-bottom: 3.5rem;
+    padding-bottom: 3rem; /* espace sous les étapes */
 }
 
+    /* ✅ Ligne orange animée seule */
+    .steps::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 8%;
+        height: 3px;
+        width: 0;
+        background: linear-gradient(90deg, #ff7a00, #ffb347);
+        border-radius: 3px;
+        z-index: 1;
+        transition: width 1s ease;
+    }
+
+    /* Largeur selon progression */
+    .steps.progress-1::after {
+        width: 33%;
+    }
+
+    .steps.progress-2::after {
+        width: 66%;
+    }
+
+    .steps.progress-3::after {
+        width: 84%;
+    }
+
+/* ==== Étapes ==== */
+.step {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    min-width: 220px;
+    text-align: center;
+    padding: 1rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: transform 0.6s ease, opacity 0.6s ease;
+}
+
+    .step.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .step:nth-child(1) {
+        transition-delay: 0.1s;
+    }
+
+    .step:nth-child(2) {
+        transition-delay: 0.3s;
+    }
+
+    .step:nth-child(3) {
+        transition-delay: 0.5s;
+    }
+
+    .step:hover {
+        transform: translateY(-5px);
+    }
+
+/* ==== Cercles ==== */
+.circle {
+    background: linear-gradient(135deg, #ff7a00, #ffb347);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.4rem;
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    box-shadow: 0 4px 12px rgba(255, 122, 0, 0.3);
+}
+
+/* ==== Texte ==== */
+.step-text h3 {
+    margin: 0.5rem 0 0.4rem;
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+.step-text p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #ccc;
+    line-height: 1.4;
+}
+
+/* ==== Bouton principal ==== */
 .btn-cta {
     background: linear-gradient(135deg, #ff6600, #ff8800);
     color: #fff;
-    padding: 0.9rem 1.6rem;
-    border-radius: 10px;
+    padding: 1rem 2rem;
+    border-radius: 50px;
     text-decoration: none;
     font-weight: bold;
+    font-size: 1.1rem;
     transition: all 0.3s ease;
 }
 
     .btn-cta:hover {
         background: linear-gradient(135deg, #e65c00, #ff6600);
-        transform: translateY(-3px);
+        transform: translateY(-4px);
     }
+
+/* ==== Responsive ==== */
+@media (max-width: 768px) {
+    .steps {
+        flex-direction: column;
+        align-items: center;
+        padding-bottom: 0;
+    }
+
+        .steps::after {
+            content: none;
+        }
+
+    .step {
+        width: 90%;
+    }
+}
+
 
 /* ==== Navbar active link ==== */
 nav a.active {
@@ -475,7 +629,7 @@ nav a.active {
         transform: translateY(0);
     }
 
-/* ==== Page � propos ==== */
+/* ==== Page À propos ==== */
 .about-section {
     display: flex;
     flex-wrap: wrap;
@@ -550,50 +704,33 @@ nav a.active {
 /* ==== Section Concept (Accueil) ==== */
 .concept-section {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 3rem;
-    padding: 4rem 2rem;
-    background: #111;
-    color: #fff;
-    animation: fadeInUp 0.8s ease-out both;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin: 4rem 0;
 }
 
 .concept-text {
     flex: 1 1 400px;
-    max-width: 550px;
 }
 
-    .concept-text h2 {
-        color: #ff6600;
-        font-size: 2rem;
-        margin-bottom: 1rem;
-    }
-
-    .concept-text p {
-        color: #ddd;
-        font-size: 1.1rem;
-        line-height: 1.7;
-        margin-bottom: 1.5rem;
-    }
-
 .concept-image {
-    flex: 1 1 350px;
+    flex: 1 1 400px;
     text-align: center;
 }
 
     .concept-image img {
         max-width: 100%;
         border-radius: 16px;
-        box-shadow: 0 6px 20px rgba(255, 165, 0, 0.2);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+        transition: transform 0.4s ease;
     }
 
         .concept-image img:hover {
             transform: scale(1.03);
-            box-shadow: 0 10px 25px rgba(255, 165, 0, 0.35);
         }
+
 
 /* ==== CTA Section ==== */
 .cta-section {
@@ -608,7 +745,7 @@ nav a.active {
         margin-bottom: 1.5rem;
     }
 
-/* ==== Page � propos (Qui sommes-nous) ==== */
+/* ==== Page À propos (Qui sommes-nous) ==== */
 .about-us-section {
     padding: 4rem 2rem;
     max-width: 900px;
@@ -732,7 +869,7 @@ nav a.active {
             background: linear-gradient(135deg, #e65c00, #ff6600);
         }
 
-/* ==== Liste d'activit�s ==== */
+/* ==== Liste d'activités ==== */
 .activities-list {
     list-style: none;
     padding: 0;
@@ -763,7 +900,7 @@ nav a.active {
             color: #fff;
         }
 
-/* Pagination (d�j� ajout�e avant) */
+/* Pagination (déjà ajoutée avant) */
 .pagination {
     display: flex;
     justify-content: center;
@@ -794,3 +931,83 @@ footer {
             color: #fff;
         }
 
+/* ==== Cases à cocher et options ==== */
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.6rem 0;
+    cursor: pointer;
+}
+
+    .checkbox-row input[type="checkbox"] {
+        transform: scale(1.3);
+        accent-color: #ff6600;
+    }
+
+#custom-text-box {
+    margin-top: 0.8rem;
+    animation: fadeIn 0.4s ease forwards;
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* --- LOGO --- */
+.logo {
+    margin: 0;
+    padding: 0;
+}
+
+    .logo a {
+        display: inline-block;
+        text-decoration: none;
+    }
+
+.logo-img {
+    height: 160px; /* 💥 2x plus grand qu'avant */
+    width: auto;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+    /* effet de zoom léger au survol */
+    .logo-img:hover {
+        transform: scale(1.05);
+    }
+
+/* --- ALIGNEMENT HEADER --- */
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+}
+
+/* --- Responsive (mobile) --- */
+@media screen and (max-width: 768px) {
+    .logo-img {
+        height: 120px; /* taille mobile adaptée */
+    }
+
+    .header-inner {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    nav {
+        text-align: center;
+    }
+}

@@ -1,0 +1,1 @@
+Ceci est un test complet d'envoi Admin avec un fichier .txt joint.

@@ -70,3 +70,31 @@ def save_route_file(f) -> str | None:
     f.save(path)
 
     return f"uploads/{new_name}"
+
+# utils/tts_utils.py
+def extract_custom_text(order: dict) -> str:
+    """
+    Retourne le texte personnalisé depuis:
+      - order["options"]["custom_text"] OU lines 1/2
+      - fallback: order["items"][0]["options"]
+    """
+    if not order:
+        return ""
+
+    # 1) options à la racine
+    opts = (order.get("options") or {}).copy()
+
+    # 2) fallback via le premier item s'il existe
+    if not opts and order.get("items"):
+        opts = (order["items"][0].get("options") or {}).copy()
+
+    text = (opts.get("custom_text") or "").strip()
+    if text:
+        return text
+
+    l1 = (opts.get("custom_text_line1") or "").strip()
+    l2 = (opts.get("custom_text_line2") or "").strip()
+    if l1 or l2:
+        return "\n".join([x for x in (l1, l2) if x]).strip()
+
+    return ""

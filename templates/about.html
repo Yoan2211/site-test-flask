@@ -6,7 +6,7 @@
     <h2>Qui sommes-nous ?</h2>
     <p>
         Nous sommes une petite équipe passionnée de <strong>sport, de design et d’innovation 3D</strong>.
-        L’idée de <em>“Cups Strava”</em> est née d’une envie simple : <strong>transformer la donnée numérique en émotion réelle</strong>.
+        L’idée de <em>“CupMyRun”</em> est née d’une envie simple : <strong>capturer les souvenirs de chaque course dans un objet unique qui raconte votre histoire</strong>.
     </p>
 
     <p>
@@ -19,19 +19,56 @@
         C’est pourquoi chaque création est personnalisée, unique et fidèle à votre parcours.
     </p>
 
+    <!-- Nouvelle section présentation avec photo -->
+    <div class="about-founders">
+        <h2>Les fondateurs</h2>
+        <img src="{{ url_for('static', filename='img/About_Founders.jpg') }}" alt="Équipe CupMyRun" class="founders-photo">
+        <p class="founders-text">
+            Nous, c’est <strong>Nolan</strong> et <strong>Yoan</strong>, deux passionnés d’électronique et de sport.<br>
+            Notre aventure a commencé sur les bancs du CPNV à Yverdon, où nous avons obtenu notre CFC en électronique.<br>
+            Aujourd’hui, Nolan est bientôt ingénieur et Yoan bientôt médecin.<br>
+            Ensemble, nous avons uni nos compétences : la santé et le sport d’un côté, l’électronique, l’impression 3D et l’ingénierie de l’autre.<br>
+            De cette synergie est née <strong>CupsMyRun</strong>, un projet qui reflète notre passion commune : créer des objets uniques qui vous font revivre chaque course et partager votre histoire.
+        </p>
+    </div>
+
     <div class="about-values reveal">
         <div class="value-card">
             <h3>⚙️ Fabrication locale</h3>
-            <p>Imprimé en Suisse, avec passion et précision.</p>
+            <p>Imprimé en Suisse romande, dans le gros de Vaud, avec passion et précision.</p>
         </div>
         <div class="value-card">
             <h3>🌍 Respect de l’environnement</h3>
-            <p>Utilisation de matériaux responsables et recyclables.</p>
+            <p>Utilisation de matériaux responsables, biodégradables et recyclés (fils d'amidon de maïs).</p>
         </div>
         <div class="value-card">
-            <h3>💡 Innovation & Design</h3>
-            <p>Allier la créativité et la technologie pour un objet unique.</p>
+            <h3>😀 Safety</h3>
+            <p>Nos cups sont imprimés avec un matériau compatible pour le contact alimentaire, garantissant une utilisation sûre et saine pour vos boissons après chaque run.</p>
         </div>
     </div>
 </section>
+
+<style>
+    .about-founders {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin: 3rem 0;
+    }
+
+    .founders-photo {
+        width: 260px;
+        height: auto;
+        border-radius: 50%;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .founders-text {
+        max-width: 800px;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+</style>
 {% endblock %}
