@@ -36,7 +36,7 @@ import polyline
 # Mollie SDK
 from mollie.api.client import Client
 from routes.mollie import get_cart_items, cart_total
-from models.db_database import db, User, BillingInfo, Order, OrderPhoto
+from models.db_database import db, User, BillingInfo, Order, OrderPhoto, Stock
 
 
 
@@ -284,6 +284,8 @@ def gobelet():
 
     strava_just_disconnected = session.pop("strava_just_disconnected", False)
 
+    stock = Stock.query.first()
+
     print("✅ [DEBUG] Fin du traitement /gobelet.\n")
     return render_template(
         "gobelet.html",
@@ -292,17 +294,26 @@ def gobelet():
         strava_connected=strava_connected,
         user_has_strava_linked=user_has_strava_linked,
         stl_url=stl_url,
+        stock=stock,
     )
-
 
 @app.route("/cart")
 def cart_view():
     items = get_cart_items()
-    total = cart_total()
+    subtotal = cart_total()  # total sans frais
+    shipping = 5.90 if items else 0.0  # frais uniquement s’il y a au moins un article
+    total = subtotal + shipping
     billing_data = session.get("billing_data")
 
+    return render_template(
+        "cart.html",
+        items=items,
+        subtotal=subtotal,
+        shipping=shipping,
+        total=total,
+        billing_data=billing_data
+    )
 
-    return render_template("cart.html", items=items, total=total, billing_data=billing_data)
 
 @app.post("/remove-item/")
 def remove_item():
@@ -538,9 +549,6 @@ def add_cart_item(item):
             return
     items.append(item)
     session["cart_items"] = items
-
-
-
 
 
 if __name__ == "__main__":

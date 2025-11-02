@@ -54,7 +54,7 @@
     <Content Include="templates\checkout_info.html" />
     <Content Include="templates\compte.html" />
     <Content Include="templates\conditions.html" />
-    <Content Include="templates\email.html" />
+    <Content Include="templates\email_client.html" />
     <Content Include="templates\email_admin.html" />
     <Content Include="templates\failure.html" />
     <Content Include="static\Products.css" />

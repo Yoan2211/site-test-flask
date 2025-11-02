@@ -104,17 +104,7 @@
                                placeholder="(optionnel)"
                                pattern="^[A-Za-zÀ-ÿ0-9\\s\\-_!?.]{0,15}$">
 
-                        <button type="button" id="preview-text-btn" class="btn" style="margin-top: 0.6rem;">
-                            🧊 Aperçu 3D du texte
-                        </button>
-
-                        <!-- Viewer STL -->
-                        <div id="text-viewer"
-                             style="display:none; width:100%; height:300px; margin-top:1rem;
-                                    border:1px solid #444; border-radius:8px; background:#000;">
-                        </div>
-
-                        <p class="text-note">
+                        <p class="text-note" style="margin-top: 0.6rem;">
                             ✏️ La taille du texte sera automatiquement ajustée pour occuper toute la face du gobelet :<br>
                             <strong>• Moins de caractères = texte plus grand</strong><br>
                             <strong>• Plus de caractères = texte plus petit</strong><br>
@@ -123,19 +113,35 @@
                     </div>
                 </fieldset>
 
-
-
-                <!-- JS pour afficher/masquer les champs -->
+                <!-- JS pour afficher/masquer les champs et valider -->
                 <script>
                     document.addEventListener("DOMContentLoaded", function () {
-                        const checkbox = document.getElementById("add-text");
+                        const addText = document.getElementById("add-text");
                         const textBox = document.getElementById("custom-text-box");
+                        const line1 = document.getElementById("custom_text_line1");
+                        const form = document.querySelector(".product-form");
 
-                        checkbox.addEventListener("change", function () {
-                            textBox.classList.toggle("hidden", !this.checked);
+                        // ✅ Affiche ou masque la zone texte selon la case cochée
+                        addText.addEventListener("change", function () {
+                            const checked = this.checked;
+                            textBox.classList.toggle("hidden", !checked);
+                            line1.required = checked; // active ou désactive "required"
+                        });
+
+                        // ✅ Validation avant soumission
+                        form.addEventListener("submit", function (e) {
+                            if (addText.checked) {
+                                const val = line1.value.trim();
+                                if (val.length < 1) {
+                                    e.preventDefault();
+                                    alert("⚠️ Vous devez saisir au moins un caractère dans la première ligne de texte.");
+                                    line1.focus();
+                                }
+                            }
                         });
                     });
                 </script>
+
 
 
                 <!-- Performance -->
@@ -181,7 +187,17 @@
                 </fieldset>
                 {% endif %}
 
-                <button type="submit">Ajouter au panier</button>
+                {% if stock and stock.remaining() > 0 %}
+                <button type="submit" class="btn btn-primary">🛒 Ajouter au panier</button>
+                <p style="color:green; margin-top:0.5rem;">
+                    🏁 Il reste <strong>{{ stock.remaining() }}</strong> gobelets disponibles.
+                </p>
+                {% else %}
+                <p style="color:red; font-weight:600; margin-top:1rem;">
+                    ❌ Stock épuisé – de nouveaux gobelets seront bientôt disponibles !
+                </p>
+                {% endif %}
+
             </form>
 
 
@@ -410,36 +426,6 @@
             animate();
         });
     }
-</script>
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const addText = document.getElementById("add-text");
-        const textBox = document.getElementById("custom-text-box");
-        const previewBtn = document.getElementById("preview-text-btn");
-        const viewer = document.getElementById("text-viewer");
-
-        if (!addText || !textBox || !previewBtn || !viewer) return;
-
-        addText.addEventListener("change", () => {
-            textBox.classList.toggle("hidden", !addText.checked);
-        });
-
-        previewBtn.addEventListener("click", () => {
-            const line1 = document.getElementById("custom_text_line1").value.trim();
-            const line2 = document.getElementById("custom_text_line2").value.trim();
-
-            if (!line1 && !line2) {
-                alert("Veuillez saisir au moins une ligne avant de générer l’aperçu 3D.");
-                return;
-            }
-
-            const text = line2 ? `${line1}\n${line2}` : line1;
-            const stlUrl = `/text/export_stl?text=${encodeURIComponent(text)}`;
-
-            viewer.style.display = "block";
-            initSTLViewer(viewer, stlUrl);
-        });
-    });
 </script>
 
 

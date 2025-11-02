@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from config import DevelopmentConfig, ProductionConfig
-from models.db_database import db
+from models.db_database import db, Stock
 from dotenv import load_dotenv
 
 
@@ -36,6 +36,13 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+        # ⚙️ Initialiser le stock si non présent
+        stock = Stock.query.first()
+        if not stock:
+            print("🧮 Initialisation du stock global (50 max)...")
+            stock = Stock(max_orders=50, current_orders=0)                  # Initialisation du compteur de Stock max
+            db.session.add(stock)
+            db.session.commit()
 
     # 5️⃣ Importer et enregistrer les blueprints
     # ⚠️ Ces imports DOIVENT être ici (pas en haut du fichier)

@@ -1,40 +1,90 @@
 {% extends "base.html" %}
 {% block title %}Paiement réussi{% endblock %}
+
 {% block content %}
-<div class="card-light">
+<main style="display: flex; justify-content: center; padding: 2rem;">
+    <div class="card-light" style="max-width: 700px; width: 100%; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 12px;">
 
-    <h2 style="color:#0a8; text-align:center;">Paiement confirmé ✅</h2>
-    <p style="text-align:center;">Merci pour la commande <strong>{{ order.id }}</strong>.</p>
-    <p style="text-align:center;">Total: <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong></p>
+        <!-- ✅ Message principal -->
+        <h2 style="color: #0a8; text-align: center; font-size: 1.8rem;">✅ Paiement confirmé</h2>
+        <p style="text-align: center; font-size: 1.1rem;">
+            Merci pour votre commande <strong>#{{ order.id }}</strong> !
+        </p>
+        <!-- 💌 Confirmation d'email -->
+        <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e8fff4;
+            border: 1px solid #b6f0cf;
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin: 1.5rem auto;
+            max-width: 550px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        ">
+            <span style="font-size: 1.6rem; margin-right: 0.6rem;">✉️</span>
+            <p style="margin: 0; font-size: 1.05rem; color: #066;">
+                Un <strong>email de confirmation</strong> contenant le récapitulatif de votre commande
+                vous a été envoyé avec succès.
+            </p>
+        </div>
 
-    <h3 style="text-align:center; margin-top:2rem;">Détails du panier</h3>
-    <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; margin-top:1rem;">
-            <thead>
-                <tr>
-                    <th style="border:1px solid #eee; padding:8px;">Article</th>
-                    <th style="border:1px solid #eee; padding:8px;">Couleur</th>
-                    <th style="border:1px solid #eee; padding:8px;">Qté</th>
-                    <th style="border:1px solid #eee; padding:8px;">PU</th>
-                    <th style="border:1px solid #eee; padding:8px;">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for it in order.line_items %}
-                <tr>
-                    <td style="border:1px solid #eee; padding:8px;">{{ it.name }}</td>
-                    <td style="border:1px solid #eee; padding:8px;">{{ it.color }}</td>
-                    <td style="border:1px solid #eee; padding:8px;">{{ it.qty }}</td>
-                    <td style="border:1px solid #eee; padding:8px;">{{ '%.2f'|format(it.unit_price) }}</td>
-                    <td style="border:1px solid #eee; padding:8px;">{{ '%.2f'|format(it.total) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+
+        <!-- 💰 Total -->
+        <div style="text-align: center; margin-top: 1rem; font-size: 1.2rem;">
+            Total payé : <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong>
+        </div>
+
+        <!-- 🧾 Détails du panier -->
+        <h3 style="text-align: center; margin-top: 2rem; color: #333;">🧾 Détails de la commande</h3>
+        <div style="overflow-x: auto; margin-top: 1rem;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+                <thead>
+                    <tr style="background-color: #f5f5f5;">
+                        <th style="border: 1px solid #eee; padding: 10px;">Article</th>
+                        <th style="border: 1px solid #eee; padding: 10px;">Couleur</th>
+                        <th style="border: 1px solid #eee; padding: 10px;">Qté</th>
+                        <th style="border: 1px solid #eee; padding: 10px;">PU</th>
+                        <th style="border: 1px solid #eee; padding: 10px;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for it in order.line_items %}
+                    <tr>
+                        <td style="border: 1px solid #eee; padding: 8px;">{{ it.name }}</td>
+                        <td style="border: 1px solid #eee; padding: 8px;">{{ it.color }}</td>
+                        <td style="border: 1px solid #eee; padding: 8px; text-align: center;">{{ it.qty }}</td>
+                        <td style="border: 1px solid #eee; padding: 8px; text-align: right;">{{ '%.2f'|format(it.unit_price) }}</td>
+                        <td style="border: 1px solid #eee; padding: 8px; text-align: right;">{{ '%.2f'|format(it.total) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 🚚 Livraison -->
+        {% if order.shipping_cost %}
+        <p style="text-align: right; margin-top: 1rem; font-size: 1rem;">
+            Frais de livraison : <strong>{{ '%.2f'|format(order.shipping_cost) }} {{ order.currency }}</strong>
+        </p>
+        {% endif %}
+
+        <!-- 🏠 Bouton retour -->
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="{{ url_for('cart_view') }}" class="btn" style="
+          background-color: #0a8;
+          color: white;
+          padding: 0.7rem 1.5rem;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: background 0.3s;">
+                ← Retour à la boutique
+            </a>
+        </div>
+
     </div>
-
-    <p style="text-align:center; margin-top:1.5rem;">
-        <a class="btn" href="{{ url_for('cart_view') }}">← Retour au panier</a>
-    </p>
-</div>
+</main>
 {% endblock %}

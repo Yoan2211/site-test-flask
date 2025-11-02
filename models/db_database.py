@@ -126,6 +126,13 @@ class Order(db.Model):
         db.session.commit()
         return order
 
+class Stock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    max_orders = db.Column(db.Integer, default=50)
+    current_orders = db.Column(db.Integer, default=0)
+
+    def remaining(self):
+        return max(0, self.max_orders - self.current_orders)
 
 # ------------------ Photos de commande ------------------
 class OrderPhoto(db.Model):

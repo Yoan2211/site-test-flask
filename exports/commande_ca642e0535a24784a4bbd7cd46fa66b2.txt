@@ -1,0 +1,194 @@
+{
+    "resource": "order",
+    "id": "ord_Av79XTwpysdAMMtzdHSGJ",
+    "profileId": "pfl_AhYqE7RZFn",
+    "method": "creditcard",
+    "amount": {
+        "value": "15.70",
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "isCancelable": false,
+    "metadata": {
+        "order_id": "ca642e0535a24784a4bbd7cd46fa66b2",
+        "items": [
+            {
+                "color": "noir_orange",
+                "id": "71e7b496bb0648b097d9871a62953485",
+                "image": "img/gobelet.jpg",
+                "name": "Gobelet personnalisé",
+                "options": {
+                    "activity_id": null,
+                    "add_results": false,
+                    "add_route": false,
+                    "add_text": true,
+                    "custom_text": "ff4f4",
+                    "custom_text_line1": "ff4f4",
+                    "custom_text_line2": "",
+                    "from_strava": false,
+                    "results": null,
+                    "route_local": null,
+                    "route_url": null
+                },
+                "qty": 1,
+                "sku": "gobelet",
+                "total": 9.8,
+                "unit_price": 9.8
+            }
+        ],
+        "subtotal": 9.8,
+        "shipping": 5.9,
+        "total": 15.700000000000001,
+        "currency": "CHF",
+        "guest_id": null,
+        "user_id": null
+    },
+    "createdAt": "2025-11-02T19:17:34+00:00",
+    "mode": "test",
+    "locale": "fr_CH",
+    "billingAddress": {
+        "streetAndNumber": "freferf",
+        "postalCode": "1004",
+        "city": "Lausanne",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoanauberson@gmail.com"
+    },
+    "shopperCountryMustMatchBillingCountry": false,
+    "orderNumber": "ca642e0535a24784a4bbd7cd46fa66b2",
+    "shippingAddress": {
+        "streetAndNumber": "freferf",
+        "postalCode": "1004",
+        "city": "Lausanne",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoanauberson@gmail.com"
+    },
+    "amountCaptured": {
+        "value": "15.70",
+        "currency": "CHF"
+    },
+    "paidAt": "2025-11-02T19:17:41+00:00",
+    "redirectUrl": "http://96d0b0332283.ngrok-free.app/payment/success",
+    "webhookUrl": "https://96d0b0332283.ngrok-free.app/webhook",
+    "lines": [
+        {
+            "resource": "orderline",
+            "id": "odl_eneKDTL7mMnGTytzdHSGJ",
+            "orderId": "ord_Av79XTwpysdAMMtzdHSGJ",
+            "name": "Gobelet personnalisé",
+            "sku": "gobelet",
+            "type": "physical",
+            "status": "paid",
+            "metadata": {
+                "activity_id": null,
+                "add_results": false,
+                "add_route": false,
+                "add_text": true,
+                "custom_text": "ff4f4",
+                "custom_text_line1": "ff4f4",
+                "custom_text_line2": "",
+                "from_strava": false,
+                "results": null,
+                "route_local": null,
+                "route_url": null
+            },
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "9.80",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "9.80",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-11-02T19:17:34+00:00"
+        },
+        {
+            "resource": "orderline",
+            "id": "odl_Ceu9ETL7mMnGTytzdHSGJ",
+            "orderId": "ord_Av79XTwpysdAMMtzdHSGJ",
+            "name": "Frais de livraison",
+            "sku": null,
+            "type": "shipping_fee",
+            "status": "paid",
+            "metadata": null,
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "5.90",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "5.90",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-11-02T19:17:34+00:00"
+        }
+    ],
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/orders/ord_Av79XTwpysdAMMtzdHSGJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19359006/orders/ord_Av79XTwpysdAMMtzdHSGJ",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-order",
+            "type": "text/html"
+        }
+    }
+}

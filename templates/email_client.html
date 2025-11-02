@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            background-color: #fafafa;
+            padding: 20px;
+        }
+
+        .email-container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 25px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #ff6600;
+            text-align: center;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+            .logo img {
+                width: 180px;
+                height: auto;
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #222;
+            color: #ff6600;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .totals {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+            .totals p {
+                margin: 5px 0;
+            }
+
+            .totals strong {
+                color: #000;
+            }
+
+            .totals .grand-total {
+                font-size: 1.2rem;
+                color: #ff6600;
+            }
+
+        footer {
+            text-align: center;
+            color: #666;
+            margin-top: 30px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img/logo_cupmyrun.png', _external=True) }}" alt="Logo CupMyRun">
+        </div>
+
+        <h2>Merci pour votre commande n°{{ order.id }} ✅</h2>
+        <p style="text-align:center;">
+            <strong>Total payé :</strong> {{ '%.2f'|format(order.total) }} {{ order.currency }}
+        </p>
+
+        <h3>🧾 Informations de facturation</h3>
+        <ul>
+            <li><strong>Nom :</strong> {{ order.billingAddress.givenName }} {{ order.billingAddress.familyName }}</li>
+            <li><strong>Email :</strong> {{ order.billingAddress.email }}</li>
+            <li><strong>Adresse :</strong> {{ order.billingAddress.streetAndNumber }}, {{ order.billingAddress.postalCode }} {{ order.billingAddress.city }}, {{ order.billingAddress.country }}</li>
+        </ul>
+
+        <!-- 📦 Détails de la commande -->
+        <h3>📦 Détails de la commande</h3>
+        <table>
+            <tr>
+                <th>Article</th>
+                <th>Couleur</th>
+                <th>Qté</th>
+                <th>Total</th>
+            </tr>
+            {% for it in order.line_items %}
+            <tr>
+                <td>{{ it.name }}</td>
+                <td>{{ it.color }}</td>
+                <td>{{ it.qty }}</td>
+                <td>{{ '%.2f'|format(it.total) }} {{ order.currency }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <!-- 🧩 Options personnalisées -->
+        {% set first_item = order.line_items[0] if order.line_items|length > 0 else None %}
+        {% if first_item and first_item.options %}
+        <h3>✨ Vos options personnalisées</h3>
+        <ul style="list-style: none; padding-left: 0; line-height: 1.6;">
+            {% if first_item.options.add_text %}
+            <li>✍️ <strong>Texte personnalisé :</strong> "{{ first_item.options.custom_text or 'Non spécifié' }}"</li>
+            {% endif %}
+
+            {% if first_item.options.add_results and first_item.options.results %}
+            <li>
+                🏃 <strong>Résultats ajoutés :</strong>
+                {{ first_item.options.results.time }} /
+                {{ first_item.options.results.distance }} km
+                ({{ first_item.options.results.pace }}/km)
+            </li>
+            {% endif %}
+
+            {% if first_item.options.add_route %}
+            <li>🗺️ <strong>Tracé de votre activité :</strong> ajouté ✅</li>
+            {% endif %}
+
+            {% if not first_item.options.add_text and not first_item.options.add_results and not first_item.options.add_route %}
+            <li>❌ Aucune option personnalisée sélectionnée</li>
+            {% endif %}
+        </ul>
+        {% endif %}
+
+        <!-- 🧮 Détail du total -->
+        <div class="totals">
+            <p>Sous-total : <strong>{{ '%.2f'|format(order.subtotal) }} {{ order.currency }}</strong></p>
+            <p>Frais de livraison : <strong>{{ '%.2f'|format(order.shipping) }} {{ order.currency }}</strong></p>
+            <p class="grand-total">💰 Total payé : <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong></p>
+        </div>
+
+        <footer>
+            Merci pour votre confiance 💙<br>
+            L’équipe <strong>CupMyRun</strong>
+        </footer>
+    </div>
+</body>
+</html>

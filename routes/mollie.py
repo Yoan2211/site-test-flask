@@ -13,7 +13,7 @@ import shutil
 
 from utils.tts_utils import extract_custom_text
 
-from models.db_database import db, User, BillingInfo, Order, OrderPhoto
+from models.db_database import db, User, BillingInfo, Order, OrderPhoto, Stock
 from services.manage_sendgrid import envoyer_email_sendgrid_Client, envoyer_email_sendgrid_Admin
 from services.googledrive import upload_to_google_drive_cmdFile
 
@@ -38,24 +38,24 @@ def cart_total():
 
 @mollie_bp.route("/checkout", methods=["GET", "POST"])
 def checkout():
-    """Crée une commande Mollie (ordre) et redirige vers l'URL de checkout.
-    Lit la config depuis current_app.config.
-    """
-    # Config
+    """Crée une commande Mollie (ordre) et redirige vers l'URL de checkout."""
     MOLLIE_API_KEY = current_app.config.get("MOLLIE_API_KEY")
     WEBHOOK_URL = current_app.config.get("WEBHOOK_URL")
-    PRICES = current_app.config.get("PRICES", {})
 
-    # Récupérer les items du panier
+    # 🛒 Récupérer les items du panier
     items = get_cart_items()
     if not items:
         flash("Le panier est vide.", "error")
         return redirect(url_for("cart_view"))
 
-    total = cart_total()
+    # 💰 Calcul du total avec frais de livraison
+    subtotal = cart_total()
+    shipping_fee = 5.90
+    total = subtotal + shipping_fee
+
     order_uuid = uuid.uuid4().hex
 
-    # Récupérer l'utilisateur / billing
+    # 👤 Récupérer l'utilisateur ou invité
     user = None
     billing_info = None
     if "user_id" in session:
@@ -87,18 +87,19 @@ def checkout():
 
         billing_info = TempBilling(billing_data)
 
-    # Préparer payload order
+    # 🧾 Conversion des données pour Mollie
     billing_data_mollie = {
         "givenName": billing_info.first_name,
         "familyName": billing_info.last_name,
         "email": billing_info.email,
-        "streetAndNumber": getattr(billing_info, 'street', ''),
-        "postalCode": getattr(billing_info, 'postal_code', ''),
-        "city": getattr(billing_info, 'city', ''),
-        "region": getattr(billing_info, 'region', ''),
-        "country": getattr(billing_info, 'country', 'CH')
+        "streetAndNumber": getattr(billing_info, "street", ""),
+        "postalCode": getattr(billing_info, "postal_code", ""),
+        "city": getattr(billing_info, "city", ""),
+        "region": getattr(billing_info, "region", ""),
+        "country": getattr(billing_info, "country", "CH"),
     }
 
+    # 🧱 Payload de commande Mollie
     order_payload = {
         "amount": {"currency": "CHF", "value": f"{total:.2f}"},
         "orderNumber": order_uuid,
@@ -107,20 +108,20 @@ def checkout():
         "metadata": {
             "order_id": order_uuid,
             "items": items,
+            "subtotal": subtotal,
+            "shipping": shipping_fee,
             "total": total,
             "currency": "CHF",
-            "guest_id": session.get("guest_id"),   
-            "user_id": session.get("user_id"),    
+            "guest_id": session.get("guest_id"),
+            "user_id": session.get("user_id"),
         },
-
         "locale": "fr_CH",
-        # Choix méthode laissé à la logique originelle (twint)
-        #"method": "twint",
         "billingAddress": billing_data_mollie,
         "shippingAddress": billing_data_mollie,
-        "lines": []
+        "lines": [],
     }
 
+    # ➕ Lignes produits
     for it in items:
         line = {
             "type": "physical",
@@ -134,14 +135,21 @@ def checkout():
             "metadata": it.get("options", {}),
         }
         order_payload["lines"].append(line)
-    
-    # ----------------------------------------------------
-    # 💾 Création de la commande en base (avant appel Mollie)
-    # ----------------------------------------------------
-    from models.db_database import Order
 
+    # 🚚 Ligne supplémentaire pour les frais de livraison
+    order_payload["lines"].append({
+        "name": "Frais de livraison",
+        "type": "shipping_fee",
+        "quantity": 1,
+        "unitPrice": {"currency": "CHF", "value": f"{shipping_fee:.2f}"},
+        "totalAmount": {"currency": "CHF", "value": f"{shipping_fee:.2f}"},
+        "vatRate": "0.00",
+        "vatAmount": {"currency": "CHF", "value": "0.00"},
+    })
+
+    # 💾 Création de la commande en base avant Mollie
+    from models.db_database import Order
     try:
-        # Vérifie qu'elle n'existe pas déjà (rare)
         existing_order = Order.query.filter_by(order_number=order_uuid).first()
         if not existing_order:
             new_order = Order(
@@ -163,15 +171,16 @@ def checkout():
             db.session.add(new_order)
             db.session.commit()
             current_app.logger.info(f"🧾 Commande temporaire créée : {order_uuid}")
-        else:
-            current_app.logger.info(f"⚠️ Commande {order_uuid} déjà existante (skip création)")
     except Exception as e:
         current_app.logger.exception(f"Erreur création commande en base avant Mollie : {e}")
 
-    # Appel Mollie
+    # 🔗 Création réelle via l’API Mollie
     try:
-        response = requests.post("https://api.mollie.com/v2/orders", json=order_payload,
-                                 headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"})
+        response = requests.post(
+            "https://api.mollie.com/v2/orders",
+            json=order_payload,
+            headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"}
+        )
         response.raise_for_status()
         mollie_order = response.json()
     except requests.exceptions.RequestException as e:
@@ -181,8 +190,16 @@ def checkout():
 
     checkout_url = mollie_order["_links"]["checkout"]["href"]
 
-    # Stocker dans la session
-    session["last_order"] = {"id": order_uuid, "line_items": items, "total": total, "currency": "CHF", "payment_url": checkout_url}
+    # 🧠 Stocker en session
+    session["last_order"] = {
+        "id": order_uuid,
+        "line_items": items,
+        "subtotal": subtotal,
+        "shipping": shipping_fee,
+        "total": total,
+        "currency": "CHF",
+        "payment_url": checkout_url,
+    }
     session["last_order_id"] = mollie_order["id"]
 
     return redirect(checkout_url)
@@ -278,6 +295,7 @@ def mollie_webhook():
         metadata = order_data.get("metadata", {})
         internal_order_id = metadata.get("order_id")
         mode = order_data.get("mode", "live")
+        print("📦 [DEBUG] Metadata reçu de Mollie :", json.dumps(order_data.get("metadata", {}), indent=2))
 
         # -------------------------------------------------------------
         # 🔒 1️⃣ Vérification cohérence commande ↔ base de données
@@ -342,6 +360,13 @@ def mollie_webhook():
         # ----------------------------------------------------
         # ✅ 5️⃣ Paiement confirmé — mise à jour ou création
         # ----------------------------------------------------
+        # Gestion du Stock - Compteur + 1
+        stock = Stock.query.first()
+        if stock.current_orders < stock.max_orders:
+            stock.current_orders += 1
+            db.session.commit()
+            current_app.logger.info(f"✅ Commande validée. Stock restant : {stock.remaining()}")
+
         guest_id = metadata.get("guest_id")
         user_id = metadata.get("user_id")
         items = metadata.get("items", [])
@@ -355,130 +380,98 @@ def mollie_webhook():
         order.billing_email = email_client or order.billing_email
         db.session.commit()
 
-        # Export JSON local
+        # ----------------------------------------------------
+        # 🧾 Export JSON local (sauvegarde)
+        # ----------------------------------------------------
         os.makedirs("exports", exist_ok=True)
         txt_path = f"exports/commande_{internal_order_id}.txt"
         with open(txt_path, "w", encoding="utf-8") as f:
             f.write(json.dumps(order_data, indent=4, ensure_ascii=False))
 
-            # Gestion images
-            image_path = None
-            activity_id = None
-            for item in items:
-                opts = item.get("options", {})
-                if opts.get("activity_id"):
-                    activity_id = opts["activity_id"]
-                if opts.get("add_route"):
-                    if opts.get("route_local") and os.path.exists(opts["route_local"]):
-                        src = opts["route_local"]
-                    elif opts.get("route_url") and "/static/" in opts.get("route_url", ""):
-                        filename = opts["route_url"].split("/")[-1]
-                        if "imported_images" in opts["route_url"]:
-                            src = os.path.join("static", "imported_images", filename)
-                        else:
-                            src = os.path.join("static", "uploads", filename)
-                    else:
-                        src = None
+        # ----------------------------------------------------
+        # 🧮 Construction de l’objet order_view pour les emails
+        # ----------------------------------------------------
+        root_metadata = order_data.get("metadata", {}) or {}
+        billing = order_data.get("billingAddress", {}) or {}
+        items = root_metadata.get("items", [])
 
-                    if src and os.path.exists(src):
-                        os.makedirs("imported_images", exist_ok=True)
-                        dst = os.path.join("imported_images", os.path.basename(src))
-                        shutil.copyfile(src, dst)
-                        image_path = dst
-                        photo = OrderPhoto(order_id=order.id, photo_url=image_path)
-                        db.session.add(photo)
-                        db.session.commit()
+        # 🔒 Récupération sûre des totaux
+        subtotal = float(root_metadata.get("subtotal", 0.0))
+        shipping = float(root_metadata.get("shipping", 0.0))
+        total = float(root_metadata.get("total", subtotal + shipping))
 
-            # =====================================================
-            # 🧩 Génération du fichier STL pour le tracé Strava
-            # =====================================================
-            from app import generate_stl_from_activity
+        # 🔍 Si shipping toujours 0 → recalcul de secours depuis lines
+        if shipping == 0 and order_data.get("lines"):
+            for line in order_data["lines"]:
+                name = line.get("name", "").lower()
+                amount_val = float(line.get("totalAmount", {}).get("value", 0))
+                if "livraison" in name or "shipping" in name:
+                    shipping += amount_val
+                else:
+                    subtotal += amount_val
+            total = subtotal + shipping
 
+        order_view = {
+            "id": order.order_number,
+            "currency": order.currency or "CHF",
+            "subtotal": round(subtotal, 2),
+            "shipping": round(shipping, 2),
+            "total": round(total, 2),
+            "line_items": items,
+            "billingAddress": billing,
+            "activity_id": root_metadata.get("activity_id"),
+            "user_id": root_metadata.get("user_id"),
+            "guest_id": root_metadata.get("guest_id"),
+            "options": {
+                "activity_id": root_metadata.get("activity_id"),
+            },
+        }
+
+
+        # =====================================================
+        # 📤 UPLOAD DE LA COMMANDE SUR KDRIVE
+        # =====================================================
+        try:
+            from services.kdrive import upload_order_to_kdrive
+            txt_bytes = json.dumps(order_data, indent=4, ensure_ascii=False).encode("utf-8")
             stl_bytes = None
-            token = None
-            if activity_id:
-                try:
-                    print(f"🟢 [DEBUG] Génération STL webhook pour activité {activity_id}")
+            upload_order_to_kdrive(
+                order_number=internal_order_id,
+                txt_bytes=txt_bytes,
+                stl_bytes=stl_bytes,
+            )
+            current_app.logger.info(f"✅ Commande {internal_order_id} transférée avec succès sur kDrive.")
+        except Exception as e:
+            current_app.logger.exception(f"❌ Erreur upload kDrive : {e}")
 
-                    user, token = StravaService.get_token_for_order(order)
-                    if not token and guest_id:
-                        from models.db_database import GuestStravaSession
-                        import time
-                        guest_entry = GuestStravaSession.query.filter_by(guest_id=guest_id).first()
-                        if guest_entry and guest_entry.strava_token and guest_entry.strava_token_expires_at > time.time():
-                            print(f"🟢 [DEBUG] Token Strava récupéré via guest_id {guest_id}")
-                            token = guest_entry.strava_token
+        # ----------------------------------------------------
+        # ✅ 6️⃣ Marquer la commande comme traitée
+        # ----------------------------------------------------
+        order.processed = True
+        db.session.commit()
+        current_app.logger.info(f"✅ Webhook finalisé pour commande {internal_order_id}")
 
-                    if token:
-                        stl_bytes = generate_stl_from_activity(activity_id, token=token)
-                        print(f"✅ [DEBUG] STL généré en mémoire ({len(stl_bytes)} octets)")
-                    else:
-                        print("🔴 [DEBUG] Aucun token Strava disponible pour l’utilisateur.")
-                except Exception as e:
-                    current_app.logger.exception(f"Erreur génération STL: {e}")
-            else:
-                print("🔴 [DEBUG] Aucun activity_id, STL non généré.")
-
-            order_view = {
-                "id": order.order_number,
-                "currency": order.currency,
-                "total": float(order.amount),
-                "line_items": items,
-                "billingAddress": billing,
-                "activity_id": activity_id,
-                "user_id": order.user_id,
-                "guest_id": guest_id,
-                "options": {
-                    "activity_id": activity_id,
-                    "strava_token": token,
-                }
-            }
-            
-            # =====================================================
-            # 📤 UPLOAD DE LA COMMANDE SUR KDRIVE
-            # =====================================================
-            try:
-                from services.kdrive import upload_order_to_kdrive
-
-                txt_bytes = json.dumps(order_data, indent=4, ensure_ascii=False).encode("utf-8")
-                stl_bytes = stl_bytes or None
-
-                upload_order_to_kdrive(
-                    order_number=internal_order_id,
-                    txt_bytes=txt_bytes,
-                    stl_bytes=stl_bytes,
-                )
-
-                current_app.logger.info(f"✅ Commande {internal_order_id} transférée avec succès sur kDrive.")
-            except Exception as e:
-                current_app.logger.exception(f"❌ Erreur upload kDrive : {e}")
-
-            # ----------------------------------------------------
-            # ✅ 6️⃣ Marquer la commande comme traitée
-            # ----------------------------------------------------
-            order.processed = True
-            db.session.commit()
-            current_app.logger.info(f"✅ Webhook finalisé pour commande {internal_order_id}")
-
-        #!!!!!!!! Ne PAS mettre dans : "à l’intérieur du with open(...) as f:" sinon le fichier n’est pas encore fermé (le buffer pas flushé) quand tu le relis juste après
+        # ----------------------------------------------------
+        # ✉️ Envoi des emails (client + admin)
+        # ----------------------------------------------------
         if email_client:
-            # ✅ FUSION des options du premier item avec celles de la racine
+            # 🔄 Fusion des options du premier article
             if order_view.get("line_items"):
                 first_item = order_view["line_items"][0]
                 opts = first_item.get("options", {}) or {}
-
-                # Fusionne (sans écraser les clés déjà existantes comme activity_id)
                 order_view["options"].update({
                     k: v for k, v in opts.items()
                     if v and k not in order_view["options"]
                 })
 
-            # ✅ Patch sécurité : si custom_text manquant mais lignes 1/2 présentes
+            # 🔒 Patch texte personnalisé
             text = extract_custom_text(order_view)
             if text and not order_view["options"].get("custom_text"):
                 order_view["options"]["custom_text"] = text
 
-            # --- Envoi des emails ---
+            # ✉️ Envoi
+            print("🔎 [DEBUG] order_view envoyé au client =", json.dumps(order_view, indent=2))
+
             envoyer_email_sendgrid_Client(order=order_view, destinataire=email_client)
             envoyer_email_sendgrid_Admin(
                 order=order_view,
@@ -501,12 +494,61 @@ def mollie_webhook():
 @mollie_bp.route("/payment/success")
 def payment_success():
     """Page de confirmation après retour Mollie."""
+    from flask import current_app
+    import requests
+
     order = session.get("last_order")
     if not order:
         flash("Commande introuvable.", "error")
         return redirect(url_for("cart_view"))
+
+    mollie_order_id = order.get("mollie_order_id")
+
+    if not mollie_order_id:
+        #flash("Commande payée mais ID Mollie manquant.", "warning")
+        order["billing_email"] = None
+        session["cart_items"] = []
+        return render_template("success.html", order=order)
+
+    try:
+        # 🔎 Récupérer les infos depuis Mollie
+        MOLLIE_API_KEY = current_app.config.get("MOLLIE_API_KEY")
+        r = requests.get(
+            f"https://api.mollie.com/v2/orders/{mollie_order_id}",
+            headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"}
+        )
+        r.raise_for_status()
+        mollie_data = r.json()
+
+        # 💰 Montant total
+        amount = mollie_data.get("amount", {}).get("value", "0.00")
+        currency = mollie_data.get("amount", {}).get("currency", "EUR")
+
+        order["total"] = float(amount)
+        order["currency"] = currency
+
+        # 📦 Lignes d’articles
+        if mollie_data.get("lines"):
+            order["line_items"] = [
+                {
+                    "name": l.get("name"),
+                    "qty": l.get("quantity"),
+                    "unit_price": float(l.get("unitPrice", {}).get("value", 0)),
+                    "total": float(l.get("totalAmount", {}).get("value", 0)),
+                    "color": l.get("metadata", {}).get("color", "-"),
+                }
+                for l in mollie_data["lines"]
+            ]
+
+    except Exception as e:
+        print("❌ Erreur lors de la récupération depuis Mollie :", e)
+
     flash("Commande payée ✅ Merci pour votre achat !", "success")
     session["cart_items"] = []
+
+    # Pas d’email à afficher, juste la phrase générique
+    order["billing_email"] = None
+
     return render_template("success.html", order=order)
 
 
