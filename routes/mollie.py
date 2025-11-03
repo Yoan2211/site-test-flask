@@ -748,5 +748,11 @@ def payment_success():
     html = render_template("pending.html", order=order)
     return nocache(make_response(html))
 
+@mollie_bp.route("/api/order-status/<order_id>")
+def api_order_status(order_id):
+    order = Order.query.filter_by(order_number=order_id).first()
+    if not order:
+        return {"error": "Order not found"}, 404
+    return {"status": order.status}, 200
 
 
