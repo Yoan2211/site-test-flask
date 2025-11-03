@@ -26,97 +26,14 @@ from shapely.ops import unary_union
 mollie_bp = Blueprint("mollie", __name__)
 
 # ----------------- Helpers -----------------
-from flask import session
-
 def get_cart_items():
     items = session.get("cart_items", [])
-    formatted_items = []
-
-    for item in items:
-        qty = item.get("qty", 1)
-        unit_price = float(item.get("unit_price", 0.0))
-        total = qty * unit_price
-        raw_options = item.get("options", {})
-        readable_options = []
-
-        if isinstance(raw_options, dict):
-
-            # --- Tracé Strava ou parcours ---
-            if raw_options.get("add_route"):
-                readable_options.append("Carte du parcours : Oui")
-
-            # --- Texte personnalisé ---
-            if raw_options.get("add_text") or raw_options.get("custom_text"):
-                line1 = raw_options.get("custom_text_line1")
-                line2 = raw_options.get("custom_text_line2")
-
-                # Si deux lignes → les fusionner joliment
-                if line1 and line2:
-                    readable_options.append(f"Texte personnalisé : {line1} / {line2}")
-                elif line1:
-                    readable_options.append(f"Texte personnalisé : {line1}")
-                elif line2:
-                    readable_options.append(f"Texte personnalisé : {line2}")
-
-
-            # --- Temps personnalisé ---
-            results = raw_options.get("results")
-            if isinstance(results, dict) and results.get("time"):
-                time = results.get("time", "")
-                distance = results.get("distance", "")
-                pace = results.get("pace", "")
-                readable_options.append(f"Temps : {time} ({distance} km — {pace}/km)")
-
-        elif isinstance(raw_options, list):
-            # si jamais options est déjà une liste simple
-            readable_options = [str(opt) for opt in raw_options if opt]
-
-        formatted_items.append({
-            "id": item.get("id"),
-            "name": item.get("name", "Produit"),
-            "color": item.get("color", "—"),
-            "qty": qty,
-            "unit_price": unit_price,
-            "total": total,
-            "options": readable_options,
-        })
-
-    session["cart_items"] = formatted_items
-    return formatted_items
-
-
-
+    session["cart_items"] = items
+    return items
 
 def cart_total():
-    """
-    Calcule le total du panier (hors livraison),
-    en prenant en compte les options et le rabais de 1 CHF sur la 3e option.
-    """
     items = get_cart_items()
-    total = 0.0
-
-    for item in items:
-        qty = item.get("qty", 1)
-        base_price = float(item.get("unit_price", 0.0))
-        options = item.get("options", [])
-
-        option_count = len(options)
-        option_supplement = 0.0
-
-        if option_count == 1:
-            option_supplement = 2.9
-        elif option_count == 2:
-            option_supplement = 2.9 * 2
-        elif option_count >= 3:
-            # 2 options à 2.9 CHF + 1 option à 1.9 CHF (rabais sur la 3e)
-            option_supplement = 2.9 * 2 + 1.9
-
-        # total unitaire avec options
-        item_total = (base_price + option_supplement) * qty
-        total += item_total
-
-    return round(total, 2)
-
+    return round(sum(i.get("unit_price", 0.0) * i.get("qty", 1) for i in items), 2)
 
 # ============================================================
 # 🗺️ Vérification du canton à partir du code postal (NPA)

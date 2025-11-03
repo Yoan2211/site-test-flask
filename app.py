@@ -300,10 +300,14 @@ def gobelet():
 @app.route("/cart")
 def cart_view():
     items = get_cart_items()
-    subtotal = cart_total()  # total sans frais
-    shipping = 5.90 if items else 0.0  # frais uniquement s’il y a au moins un article
+    subtotal = cart_total()
+    shipping = 5.90 if items else 0.0
     total = subtotal + shipping
     billing_data = session.get("billing_data")
+
+    # ✅ Convertit les options en texte lisible
+    for item in items:
+        item["readable_options"] = readable_options(item.get("options", {}))
 
     return render_template(
         "cart.html",
@@ -314,12 +318,42 @@ def cart_view():
         billing_data=billing_data
     )
 
-@app.route("/api/order-status/<order_number>")
-def api_order_status(order_number):
-    order = Order.query.filter_by(order_number=order_number).first()
-    if not order:
-        return {"status": "unknown"}, 404
-    return {"status": (order.status or "").lower()}
+
+def readable_options(raw_options):
+    """
+    Transforme le dictionnaire d'options du gobelet en une liste de chaînes lisibles pour l'affichage.
+    """
+    if not isinstance(raw_options, dict):
+        return []
+
+    readable = []
+
+    # --- Texte personnalisé ---
+    line1 = raw_options.get("custom_text_line1") or ""
+    line2 = raw_options.get("custom_text_line2") or ""
+    if line1 or line2:
+        text_line = f"{line1} / {line2}" if line1 and line2 else line1 or line2
+        readable.append(f"Texte personnalisé : {text_line}")
+
+    # --- Résultats ---
+    results = raw_options.get("results")
+    if results:
+        time_str = results.get("time")
+        dist = results.get("distance")
+        pace = results.get("pace")
+        if time_str and dist and pace:
+            readable.append(f"Temps : {time_str} ({dist} km — {pace}/km)")
+        elif time_str and dist:
+            readable.append(f"Temps : {time_str} ({dist} km)")
+        elif time_str:
+            readable.append(f"Temps : {time_str}")
+
+    # --- Tracé GPS ---
+    if raw_options.get("add_route"):
+        readable.append("Tracé GPS ajouté")
+
+    return readable
+
 
 @app.post("/remove-item/")
 def remove_item():

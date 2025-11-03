@@ -25,11 +25,11 @@
                     <td style="padding: 0.8rem;">{{ item.name }}</td>
                     <td style="padding: 0.8rem;">{{ item.color }}</td>
 
-                    <!-- 🧩 Récapitulatif des options -->
+                    <!-- 🧩 Options lisibles -->
                     <td style="padding: 0.8rem;">
-                        {% if item.options %}
-                        <ul style="list-style: none; margin: 0; padding: 0; color: #ff6600;">
-                            {% for opt in item.options %}
+                        {% if item.readable_options %}
+                        <ul style="list-style: none; margin: 0; padding: 0; color: #ff6600; ">
+                            {% for opt in item.readable_options %}
                             <li>• {{ opt }}</li>
                             {% endfor %}
                         </ul>
@@ -64,8 +64,7 @@
     <!-- 🚚 Info livraison -->
     <div class="card-light" style="margin-top: 1rem; padding: 1rem; background-color: #1a1a1a; border-left: 4px solid #ff6600;">
         <p style="margin: 0; color: #ccc;">
-            🚚 <strong>Livraison :</strong> effectuée par nos soins <em>en main propre</em> entre
-            <strong>5 à 10 jours</strong> dès la réception du paiement.
+            🚚 <strong>Livraison :</strong> effectuée par nos soins <em>en main propre</em> entre <strong>5 à 10 jours</strong> dès la réception du paiement.
         </p>
     </div>
 
@@ -92,10 +91,9 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // Active le mode "scroll horizontal autorisé" pour le panier
-        document.body.classList.add("cart-open");
-        document.documentElement.classList.add("cart-open");
-    });
+document.addEventListener("DOMContentLoaded", function () {
+    document.body.classList.add("cart-open");
+    document.documentElement.classList.add("cart-open");
+});
 </script>
 {% endblock %}
