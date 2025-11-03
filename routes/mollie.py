@@ -520,27 +520,20 @@ def mollie_webhook():
         is_paid = False
         payments_link = order_data.get("_links", {}).get("payments", {}).get("href")
 
-        if status == "paid" and payments_link:
-            payments_resp = requests.get(
-                payments_link,
-                headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"}
-            )
-            if payments_resp.status_code == 200:
-                payments_data = payments_resp.json()
-                payments_list = payments_data.get("data", [])
-                for p in payments_list:
-                    if p.get("status") == "paid" and p.get("paidAt"):
-                        is_paid = True
-                        break
-
-        # ✅ Tolère les paiements de test (pas de paidAt en sandbox)
-        if mode == "test" and status == "paid":
+        # Vérifie d'abord le statut global (le plus fiable)
+        if status in ["paid", "authorized", "completed"]:
             is_paid = True
-            current_app.logger.info(f"🧪 Paiement TEST accepté pour commande {internal_order_id}")
+        else:
+            # (Optionnel) si tu veux vérifier les paiements manuellement :
+            if payments_link:
+                payments_resp = requests.get(payments_link, headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"})
+                if payments_resp.status_code == 200:
+                    payments_data = payments_resp.json()
+                    for p in payments_data.get("data", []):
+                        if p.get("status") == "paid":
+                            is_paid = True
+                            break
 
-        if status != "paid" or not is_paid:
-            current_app.logger.info(f"⏸ Commande {internal_order_id} ignorée (status={status})")
-            return "Commande non payée", 200
 
         # ----------------------------------------------------
         # ✅ 5️⃣ Paiement confirmé — mise à jour ou création
