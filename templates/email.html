@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h2 {
+            color: #2c3e50;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Merci pour votre commande n°{{ order.id }} ✅</h2>
+    <p><strong>Total payé :</strong> {{ '%.2f'|format(order.total) }} {{ order.currency }}</p>
+
+    <h3>🧾 Informations de facturation</h3>
+    <ul>
+        <li><strong>Nom :</strong> {{ order.billingAddress.givenName }} {{ order.billingAddress.familyName }}</li>
+        <li><strong>Email :</strong> {{ order.billingAddress.email }}</li>
+        <li><strong>Adresse :</strong> {{ order.billingAddress.streetAndNumber }}, {{ order.billingAddress.postalCode }} {{ order.billingAddress.city }}, {{ order.billingAddress.country }}</li>
+    </ul>
+
+    <h3>📦 Détails de la commande</h3>
+    <table>
+        <tr>
+            <th>Article</th>
+            <th>Couleur</th>
+            <th>Qté</th>
+            <th>Total</th>
+        </tr>
+        {% for it in order.line_items %}
+        <tr>
+            <td>{{ it.name }}</td>
+            <td>{{ it.color }}</td>
+            <td>{{ it.qty }}</td>
+            <td>{{ '%.2f'|format(it.total) }} {{ order.currency }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <p>Merci pour votre confiance 💙<br>L’équipe StravaCup</p>
+</body>
+</html>
