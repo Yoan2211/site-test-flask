@@ -704,6 +704,12 @@ def mollie_webhook():
 
     return "OK", 200
 
+@mollie_bp.route("/api/order-status/<order_id>")
+def api_order_status(order_id):
+    order = Order.query.filter_by(order_number=order_id).first()
+    if not order:
+        return {"status": "not_found"}, 404
+    return {"status": order.status or "pending"}, 200
 
 # ----------------- Route : Success -----------------
 @mollie_bp.route("/payment/success")
