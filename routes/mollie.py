@@ -711,24 +711,19 @@ def mollie_webhook():
 @mollie_bp.route("/payment/success")
 def payment_success():
     """Page de confirmation après retour Mollie."""
-    from flask import current_app
+    from flask import current_app, make_response
     import requests
 
+    # --- 🔒 Vérification session ---
     order = session.get("last_order")
-    if not order:
-        flash("Commande introuvable.", "error")
-        return redirect(url_for("cart_view"))
+    if not order or not order.get("mollie_order_id"):
+        flash("Echec de paiement", "error")
+        return redirect(url_for("cart_view"))  # ou url_for("cart_view")
 
-    mollie_order_id = order.get("mollie_order_id")
-
-    if not mollie_order_id:
-        #flash("Commande payée mais ID Mollie manquant.", "warning")
-        order["billing_email"] = None
-        session["cart_items"] = []
-        return render_template("success.html", order=order)
+    mollie_order_id = order["mollie_order_id"]
 
     try:
-        # 🔎 Récupérer les infos depuis Mollie
+        # --- 🔎 Récupération infos depuis Mollie ---
         MOLLIE_API_KEY = current_app.config.get("MOLLIE_API_KEY")
         r = requests.get(
             f"https://api.mollie.com/v2/orders/{mollie_order_id}",
@@ -737,14 +732,19 @@ def payment_success():
         r.raise_for_status()
         mollie_data = r.json()
 
-        # 💰 Montant total
+        # Vérifie si le paiement est réellement payé
+        status = mollie_data.get("status")
+        if status != "paid":
+            flash("Le paiement n'est pas encore confirmé.", "warning")
+            return redirect(url_for("cart_view"))
+
+        # --- 💰 Montant total ---
         amount = mollie_data.get("amount", {}).get("value", "0.00")
         currency = mollie_data.get("amount", {}).get("currency", "EUR")
-
         order["total"] = float(amount)
         order["currency"] = currency
 
-        # 📦 Lignes d’articles
+        # --- 📦 Lignes d’articles ---
         if mollie_data.get("lines"):
             order["line_items"] = [
                 {
@@ -756,27 +756,35 @@ def payment_success():
                 }
                 for l in mollie_data["lines"]
             ]
-            # 🚚 Extraction du prix de livraison s'il existe
-            shipping_lines = [
-                l for l in mollie_data["lines"] if l.get("type") == "shipping_fee"
-            ]
+
+            # 🚚 Frais de livraison
+            shipping_lines = [l for l in mollie_data["lines"] if l.get("type") == "shipping_fee"]
             if shipping_lines:
-                shipping_total = sum(
+                order["shipping_cost"] = sum(
                     float(l.get("totalAmount", {}).get("value", 0)) for l in shipping_lines
                 )
-                order["shipping_cost"] = shipping_total
             else:
-                # Si Mollie ne renvoie pas de ligne de type "shipping_fee", on met une valeur par défaut
-                order["shipping_cost"] = 5.90  # 💡 adapte selon ton tarif réel
+                order["shipping_cost"] = 5.90  # valeur par défaut
 
     except Exception as e:
         print("❌ Erreur lors de la récupération depuis Mollie :", e)
+        flash("Erreur lors de la vérification du paiement.", "error")
+        return redirect(url_for("cart_view"))
 
-    session["cart_items"] = []
+    # --- 🧹 Nettoyage session (évite retour sur success) ---
+    session.pop("cart_items", None)
+    session.pop("last_order", None)
 
-    # Pas d’email à afficher, juste la phrase générique
+    # --- 👤 Nettoyage info client ---
     order["billing_email"] = None
 
-    return render_template("success.html", order=order)
+    # --- 🚫 Désactivation du cache (bloque le retour arrière) ---
+    response = make_response(render_template("success.html", order=order))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    return response
+
 
 
