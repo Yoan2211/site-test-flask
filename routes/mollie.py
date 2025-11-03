@@ -240,7 +240,7 @@ def checkout():
     order_payload = {
         "amount": {"currency": "CHF", "value": f"{total:.2f}"},
         "orderNumber": order_uuid,
-        "redirectUrl": url_for("mollie.payment_success", _external=True),
+        "redirectUrl": url_for("mollie.payment_success", _external=True) + f"?o={order_uuid}",
         "webhookUrl": WEBHOOK_URL,
         "metadata": {
             "compressed": True,
@@ -665,6 +665,7 @@ def mollie_webhook():
         # ✅ 6️⃣ Marquer la commande comme traitée
         # ----------------------------------------------------
         order.processed = True
+        order.details_json = json.dumps(order_view, ensure_ascii=False)
         db.session.commit()
         current_app.logger.info(f"✅ Webhook finalisé pour commande {internal_order_id}")
 
@@ -692,7 +693,7 @@ def mollie_webhook():
             envoyer_email_sendgrid_Client(order=order_view, destinataire=email_client)
             envoyer_email_sendgrid_Admin(
                 order=order_view,
-                destinataire="stravacup@gmail.com",
+                destinataire="contact@cupmyrun.ch",
                 txt_path=txt_path
             )
 
@@ -710,81 +711,42 @@ def mollie_webhook():
 # ----------------- Route : Success -----------------
 @mollie_bp.route("/payment/success")
 def payment_success():
-    """Page de confirmation après retour Mollie."""
-    from flask import current_app, make_response
-    import requests
+    from flask import make_response, request
 
-    # --- 🔒 Vérification session ---
-    order = session.get("last_order")
-    if not order or not order.get("mollie_order_id"):
-        flash("Echec de paiement", "error")
-        return redirect(url_for("cart_view"))  # ou url_for("cart_view")
-
-    mollie_order_id = order["mollie_order_id"]
-
-    try:
-        # --- 🔎 Récupération infos depuis Mollie ---
-        MOLLIE_API_KEY = current_app.config.get("MOLLIE_API_KEY")
-        r = requests.get(
-            f"https://api.mollie.com/v2/orders/{mollie_order_id}",
-            headers={"Authorization": f"Bearer {MOLLIE_API_KEY}"}
-        )
-        r.raise_for_status()
-        mollie_data = r.json()
-
-        # Vérifie si le paiement est réellement payé
-        status = mollie_data.get("status")
-        if status != "paid":
-            flash("Le paiement n'est pas encore confirmé.", "warning")
-            return redirect(url_for("cart_view"))
-
-        # --- 💰 Montant total ---
-        amount = mollie_data.get("amount", {}).get("value", "0.00")
-        currency = mollie_data.get("amount", {}).get("currency", "EUR")
-        order["total"] = float(amount)
-        order["currency"] = currency
-
-        # --- 📦 Lignes d’articles ---
-        if mollie_data.get("lines"):
-            order["line_items"] = [
-                {
-                    "name": l.get("name"),
-                    "qty": l.get("quantity"),
-                    "unit_price": float(l.get("unitPrice", {}).get("value", 0)),
-                    "total": float(l.get("totalAmount", {}).get("value", 0)),
-                    "color": l.get("metadata", {}).get("color", "-"),
-                }
-                for l in mollie_data["lines"]
-            ]
-
-            # 🚚 Frais de livraison
-            shipping_lines = [l for l in mollie_data["lines"] if l.get("type") == "shipping_fee"]
-            if shipping_lines:
-                order["shipping_cost"] = sum(
-                    float(l.get("totalAmount", {}).get("value", 0)) for l in shipping_lines
-                )
-            else:
-                order["shipping_cost"] = 5.90  # valeur par défaut
-
-    except Exception as e:
-        print("❌ Erreur lors de la récupération depuis Mollie :", e)
-        flash("Erreur lors de la vérification du paiement.", "error")
+    order_number = request.args.get("o", "").strip()
+    if not order_number:
+        flash("Commande introuvable.", "error")
         return redirect(url_for("cart_view"))
 
-    # --- 🧹 Nettoyage session (évite retour sur success) ---
-    session.pop("cart_items", None)
-    session.pop("last_order", None)
+    order = Order.query.filter_by(order_number=order_number).first()
+    if not order:
+        flash("Commande introuvable.", "error")
+        return redirect(url_for("cart_view"))
 
-    # --- 👤 Nettoyage info client ---
-    order["billing_email"] = None
+    # 🔒 Anti-cache pour tuer le back navigateur
+    def nocache(resp):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
 
-    # --- 🚫 Désactivation du cache (bloque le retour arrière) ---
-    response = make_response(render_template("success.html", order=order))
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
+    # ✅ Succès SEULEMENT si la BDD dit 'paid'
+    if (order.status or "").lower() == "paid":
+        details = {}
+        if order.details_json:
+            try:
+                details = json.loads(order.details_json)
+            except Exception:
+                pass
 
-    return response
+        # Fusionne dans le contexte
+        return render_template("success.html", order=order, details=details)
+        html = render_template("success.html", order=order)
+        return nocache(make_response(html))
+
+    # 🕗 Sinon on affiche "en attente" (et on poll)
+    html = render_template("pending.html", order=order)
+    return nocache(make_response(html))
 
 
 

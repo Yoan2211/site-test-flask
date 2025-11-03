@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Paiement en cours{% endblock %}
+{% block content %}
+<main style="text-align:center; padding:3rem 1rem;">
+    <h2>💳 Paiement en cours de validation…</h2>
+    <p>Merci ! Nous attendons la confirmation de Mollie. Cela prend parfois quelques secondes.</p>
+    <p>Cette page se mettra à jour automatiquement.</p>
+</main>
+
+<script>
+    (function poll() {
+        const url = new URL(window.location.href);
+        const orderNumber = url.searchParams.get("o");
+        if (!orderNumber) return;
+
+        fetch(`/api/order-status/${orderNumber}`, { cache: "no-store" })
+            .then(r => r.ok ? r.json() : Promise.reject())
+            .then(data => {
+                if (data.status === "paid") {
+                    // Recharge propre → affichera success.html (status=paid en BDD)
+                    window.location.replace(window.location.href);
+                } else {
+                    setTimeout(poll, 3000);
+                }
+            })
+            .catch(() => setTimeout(poll, 4000));
+    })();
+</script>
+{% endblock %}

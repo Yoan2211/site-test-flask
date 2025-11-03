@@ -102,8 +102,8 @@
         </div>
 
         <h2>🚀 Nouvelle commande reçue</h2>
-        <p><strong>ID commande :</strong> {{ order.id }}</p>
-        <p><strong>Montant total :</strong> {{ '%.2f'|format(order.total) }} {{ order.currency }}</p>
+        <p><strong>ID commande :</strong> {{ order.order_number or order.id }}</p>
+        <p><strong>Montant total :</strong> {{ '%.2f'|format(order.total or 0) }} {{ order.currency or 'CHF' }}</p>
 
         <!-- 👤 Informations de facturation -->
         <h3 class="section-title">👤 Détails de facturation</h3>
@@ -122,6 +122,7 @@
         </table>
 
         <!-- 🧾 Détail des articles -->
+        {% if order.line_items %}
         <h3 class="section-title">📦 Articles commandés</h3>
         <table>
             <tr>
@@ -135,32 +136,45 @@
             {% for it in order.line_items %}
             <tr>
                 <td>{{ it.name }}</td>
-                <td>{{ it.color }}</td>
-                <td>{{ it.qty }}</td>
-                <td>{{ '%.2f'|format(it.unit_price) }} {{ order.currency }}</td>
-                <td>{{ '%.2f'|format(it.total) }} {{ order.currency }}</td>
+                <td>{{ it.color or '-' }}</td>
+                <td>{{ it.qty or 1 }}</td>
+                <td>{{ '%.2f'|format(it.unit_price or 0) }} {{ order.currency or 'CHF' }}</td>
+                <td>{{ '%.2f'|format(it.total or 0) }} {{ order.currency or 'CHF' }}</td>
                 <td>
+                    {% if it.options %}
                     {% if it.options.add_results %}
                     🏃 Résultats : {{ it.options.results.time }} / {{ it.options.results.distance }} km ({{ it.options.results.pace }}/km)<br>
                     {% endif %}
                     {% if it.options.add_route %}
-                    🗺️ Tracé fourni ✅
+                    🗺️ Tracé fourni ✅<br>
                     {% else %}
-                    ❌ Pas de tracé
+                    ❌ Pas de tracé<br>
                     {% endif %}
                     {% if it.options.custom_text %}
-                    ✍️ Texte : <code>{{ it.options.custom_text }}</code>
+                    ✍️ Texte : <code>{{ it.options.custom_text }}</code><br>
+                    {% endif %}
+                    {% if not (it.options.add_results or it.options.add_route or it.options.custom_text) %}
+                    ❌ Aucune option personnalisée
+                    {% endif %}
+                    {% else %}
+                    ❌ Aucune option personnalisée
                     {% endif %}
                 </td>
             </tr>
             {% endfor %}
         </table>
+        {% endif %}
 
         <!-- 💰 Totaux -->
         <div class="totals">
-            <p>Sous-total : <strong>{{ '%.2f'|format(order.subtotal) }} {{ order.currency }}</strong></p>
-            <p>Frais de livraison : <strong>{{ '%.2f'|format(order.shipping) }} {{ order.currency }}</strong></p>
-            <p class="grand-total">💰 Total à encaisser : <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong></p>
+            {% if order.subtotal %}
+            <p>Sous-total : <strong>{{ '%.2f'|format(order.subtotal or 0) }} {{ order.currency or 'CHF' }}</strong></p>
+            {% endif %}
+            <p>Frais de livraison : <strong>{{ '%.2f'|format(order.shipping or 0) }} {{ order.currency or 'CHF' }}</strong></p>
+            <p class="grand-total">
+                💰 Total à encaisser :
+                <strong>{{ '%.2f'|format(order.total or 0) }} {{ order.currency or 'CHF' }}</strong>
+            </p>
         </div>
 
         <footer>

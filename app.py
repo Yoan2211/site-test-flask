@@ -314,6 +314,12 @@ def cart_view():
         billing_data=billing_data
     )
 
+@app.route("/api/order-status/<order_number>")
+def api_order_status(order_number):
+    order = Order.query.filter_by(order_number=order_number).first()
+    if not order:
+        return {"status": "unknown"}, 404
+    return {"status": (order.status or "").lower()}
 
 @app.post("/remove-item/")
 def remove_item():

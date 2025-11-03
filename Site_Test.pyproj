@@ -67,6 +67,7 @@
     <Content Include="templates\login.html" />
     <Content Include="templates\confidentialite.html" />
     <Content Include="templates\mentions.html" />
+    <Content Include="templates\pending.html" />
     <Content Include="templates\performances.html" />
     <Content Include="templates\privacy.html" />
     <Content Include="templates\products.html" />

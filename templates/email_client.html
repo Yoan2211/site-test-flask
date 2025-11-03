@@ -99,19 +99,23 @@
             <img src="{{ url_for('static', filename='img/logo_cupmyrun.png', _external=True) }}" alt="Logo CupMyRun">
         </div>
 
-        <h2>Merci pour votre commande n°{{ order.id }} ✅</h2>
+        <h2>Merci pour votre commande n°{{ order.id or order.order_number }} ✅</h2>
         <p style="text-align:center;">
-            <strong>Total payé :</strong> {{ '%.2f'|format(order.total) }} {{ order.currency }}
+            <strong>Total payé :</strong> {{ '%.2f'|format(order.total or 0) }} {{ order.currency or 'CHF' }}
         </p>
 
+        <!-- 🧾 Informations de facturation -->
+        {% if order.billingAddress %}
         <h3>🧾 Informations de facturation</h3>
         <ul>
             <li><strong>Nom :</strong> {{ order.billingAddress.givenName }} {{ order.billingAddress.familyName }}</li>
             <li><strong>Email :</strong> {{ order.billingAddress.email }}</li>
             <li><strong>Adresse :</strong> {{ order.billingAddress.streetAndNumber }}, {{ order.billingAddress.postalCode }} {{ order.billingAddress.city }}, {{ order.billingAddress.country }}</li>
         </ul>
+        {% endif %}
 
         <!-- 📦 Détails de la commande -->
+        {% if order.line_items %}
         <h3>📦 Détails de la commande</h3>
         <table>
             <tr>
@@ -123,17 +127,17 @@
             {% for it in order.line_items %}
             <tr>
                 <td>{{ it.name }}</td>
-                <td>{{ it.color }}</td>
+                <td>{{ it.color or '-' }}</td>
                 <td>{{ it.qty }}</td>
-                <td>{{ '%.2f'|format(it.total) }} {{ order.currency }}</td>
+                <td>{{ '%.2f'|format(it.total or 0) }} {{ order.currency or 'CHF' }}</td>
             </tr>
             {% endfor %}
         </table>
+        {% endif %}
 
-        <!-- 🧩 Options personnalisées -->
-        {% if order.line_items and order.line_items|length > 0 %}
+        <!-- ✨ Options personnalisées -->
+        {% if order.line_items %}
         <h3>✨ Vos options personnalisées</h3>
-
         {% for item in order.line_items %}
         <div style="margin-bottom: 1rem;">
             <h4 style="margin-bottom: 0.3rem;">🥤 {{ item.name }} — <span style="color: gray;">{{ item.color or 'Couleur non spécifiée' }}</span></h4>
@@ -142,7 +146,6 @@
                 {% if item.options.add_text %}
                 <li>✍️ <strong>Texte personnalisé :</strong> "{{ item.options.custom_text or 'Non spécifié' }}"</li>
                 {% endif %}
-
                 {% if item.options.add_results and item.options.results %}
                 <li>
                     🏃 <strong>Résultats ajoutés :</strong>
@@ -151,11 +154,9 @@
                     ({{ item.options.results.pace }}/km)
                 </li>
                 {% endif %}
-
                 {% if item.options.add_route %}
                 <li>🗺️ <strong>Tracé de votre activité :</strong> ajouté ✅</li>
                 {% endif %}
-
                 {% if not item.options.add_text and not item.options.add_results and not item.options.add_route %}
                 <li>❌ Aucune option personnalisée sélectionnée</li>
                 {% endif %}
@@ -167,11 +168,19 @@
         {% endfor %}
         {% endif %}
 
-        <!-- 🧮 Détail du total -->
+        <!-- 🧮 Totaux -->
         <div class="totals">
-            <p>Sous-total : <strong>{{ '%.2f'|format(order.subtotal) }} {{ order.currency }}</strong></p>
-            <p>Frais de livraison : <strong>{{ '%.2f'|format(order.shipping) }} {{ order.currency }}</strong></p>
-            <p class="grand-total">💰 Total payé : <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong></p>
+            {% if order.subtotal %}
+            <p>Sous-total : <strong>{{ '%.2f'|format(order.subtotal) }} {{ order.currency or 'CHF' }}</strong></p>
+            {% endif %}
+            <p>
+                Frais de livraison :
+                <strong>{{ '%.2f'|format(order.shipping or 0) }} {{ order.currency or 'CHF' }}</strong>
+            </p>
+            <p class="grand-total">
+                💰 Total payé :
+                <strong>{{ '%.2f'|format(order.total or 0) }} {{ order.currency or 'CHF' }}</strong>
+            </p>
         </div>
 
         <!-- 🚚 Info livraison -->

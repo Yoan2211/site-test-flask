@@ -59,8 +59,8 @@ class Order(db.Model):
     status = db.Column(db.String(20), nullable=False, default="pending")
     payment_date = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    details_json = db.Column(db.Text, nullable=True)
 
-    # Snapshot des infos de facturation au moment de la commande
     billing_first_name = db.Column(db.String(50))
     billing_last_name = db.Column(db.String(50))
     billing_email = db.Column(db.String(150))
@@ -69,9 +69,18 @@ class Order(db.Model):
     billing_city = db.Column(db.String(50))
     billing_region = db.Column(db.String(10))
     billing_country = db.Column(db.String(10))
-    processed = db.Column(db.Boolean, default=False)  # <-- ajouter cette colonne
+    processed = db.Column(db.Boolean, default=False)
 
     photos = db.relationship("OrderPhoto", backref="order", lazy=True)
+
+    def __repr__(self):
+        return f"<Order {self.order_number} - {self.status}>"
+
+    @property
+    def total(self):
+        """Montant total (produit + livraison éventuelle)."""
+        return round((self.amount or 0.0) + getattr(self, "shipping_cost", 0.0), 2)
+
 
     def __repr__(self):
         return f"<Order {self.order_number} - {self.status}>"
