@@ -12,6 +12,7 @@
                 <tr style="background-color: #222; color: #ff6600;">
                     <th style="padding: 0.8rem;">Produit</th>
                     <th style="padding: 0.8rem;">Couleur</th>
+                    <th style="padding: 0.8rem;">Options</th>
                     <th style="padding: 0.8rem;">Quantité</th>
                     <th style="padding: 0.8rem;">Prix unitaire</th>
                     <th style="padding: 0.8rem;">Total</th>
@@ -23,6 +24,20 @@
                 <tr style="border-bottom: 1px solid #333;">
                     <td style="padding: 0.8rem;">{{ item.name }}</td>
                     <td style="padding: 0.8rem;">{{ item.color }}</td>
+
+                    <!-- 🧩 Récapitulatif des options -->
+                    <td style="padding: 0.8rem;">
+                        {% if item.options %}
+                        <ul style="list-style: none; margin: 0; padding: 0; color: #ff6600;">
+                            {% for opt in item.options %}
+                            <li>• {{ opt }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <span style="color: #666;">Aucune</span>
+                        {% endif %}
+                    </td>
+
                     <td style="padding: 0.8rem;">{{ item.qty }}</td>
                     <td style="padding: 0.8rem;">CHF {{ "%.2f"|format(item.unit_price) }}</td>
                     <td style="padding: 0.8rem;">CHF {{ "%.2f"|format(item.total) }}</td>
@@ -75,6 +90,7 @@
     </div>
     {% endif %}
 </div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // Active le mode "scroll horizontal autorisé" pour le panier
@@ -82,6 +98,4 @@
         document.documentElement.classList.add("cart-open");
     });
 </script>
-
-
 {% endblock %}
