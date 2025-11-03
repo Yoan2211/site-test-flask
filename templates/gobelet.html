@@ -203,6 +203,33 @@
                     </div>
                 </fieldset>
 
+                <script>
+                    document.addEventListener("DOMContentLoaded", () => {
+                        const timeInput = document.getElementById("time-input");
+
+                        timeInput.addEventListener("input", () => {
+                            let value = timeInput.value.replace(/[^0-9]/g, ""); // Garde uniquement les chiffres
+                            if (value.length > 6) value = value.slice(0, 6); // max 6 chiffres (hhmmss)
+
+                            let formatted = "";
+                            if (value.length <= 2) {
+                                formatted = value; // secondes uniquement
+                            } else if (value.length <= 4) {
+                                // mm:ss
+                                formatted = value.slice(0, value.length - 2) + ":" + value.slice(-2);
+                            } else {
+                                // hh:mm:ss
+                                formatted = value.slice(0, value.length - 4) + ":" +
+                                    value.slice(-4, -2) + ":" +
+                                    value.slice(-2);
+                            }
+
+                            timeInput.value = formatted;
+                        });
+                    });
+                </script>
+
+
                 {% if selected_activity and selected_activity.id %}
                 <fieldset>
                     <legend>🗺️ Tracé GPS</legend>
