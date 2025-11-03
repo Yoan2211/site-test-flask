@@ -538,13 +538,6 @@ def mollie_webhook():
             is_paid = True
             current_app.logger.info(f"🧪 Paiement TEST accepté pour commande {internal_order_id}")
 
-        # 🚫 Bloque les paiements “paid” sans preuve réelle en live
-        if mode == "live" and status == "paid" and not is_paid:
-            current_app.logger.warning(
-                f"🚫 Paiement fantôme ignoré en mode live (status='paid' sans preuve de paiement) — ID {mollie_order_id}"
-            )
-            return "Fake paid ignored", 200
-
         if status != "paid" or not is_paid:
             current_app.logger.info(f"⏸ Commande {internal_order_id} ignorée (status={status})")
             return "Commande non payée", 200
