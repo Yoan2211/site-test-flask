@@ -6,6 +6,7 @@ from flask import Blueprint, current_app, session, request, url_for, redirect, r
 from datetime import datetime
 import uuid
 import os
+import csv
 import io
 import json
 import requests
@@ -15,7 +16,6 @@ from utils.tts_utils import extract_custom_text
 
 from models.db_database import db, User, BillingInfo, Order, OrderPhoto, Stock
 from services.manage_sendgrid import envoyer_email_sendgrid_Client, envoyer_email_sendgrid_Admin
-from services.googledrive import upload_to_google_drive_cmdFile
 
 from services.strava_service import StravaService
 
@@ -34,6 +34,47 @@ def get_cart_items():
 def cart_total():
     items = get_cart_items()
     return round(sum(i.get("unit_price", 0.0) * i.get("qty", 1) for i in items), 2)
+
+# ============================================================
+# 🗺️ Vérification du canton à partir du code postal (NPA)
+# ============================================================
+
+POSTAL_CANTONS = {}
+
+def load_postal_cantons():
+    """
+    Charge la liste officielle des codes postaux suisses depuis postal_codes.csv.
+    Exige les colonnes : PLZ et Kantonskürzel.
+    """
+    global POSTAL_CANTONS
+    csv_path = os.path.join(os.path.dirname(__file__), "static", "data", "postal_codes.csv")
+
+    if not os.path.exists(csv_path):
+        print(f"⚠️ Fichier postal_codes.csv introuvable à : {csv_path}")
+        return
+
+    # Lecture flexible (tabulation ou point-virgule)
+    with open(csv_path, newline='', encoding='utf-8') as csvfile:
+        sample = csvfile.read(2048)
+        csvfile.seek(0)
+        dialect = csv.Sniffer().sniff(sample, delimiters=";\t,")
+        reader = csv.DictReader(csvfile, dialect=dialect)
+        for row in reader:
+            code = str(row.get("PLZ") or "").strip()
+            canton = str(row.get("Kantonskürzel") or "").strip().upper()
+            if code and canton:
+                POSTAL_CANTONS[code] = canton
+
+    print(f"✅ {len(POSTAL_CANTONS)} codes postaux chargés depuis postal_codes.csv")
+
+# Charger les codes postaux dès le démarrage
+load_postal_cantons()
+
+
+def is_allowed_region(postal_code):
+    """Retourne (True, canton) si le code postal appartient à VD ou FR."""
+    canton = POSTAL_CANTONS.get(str(postal_code))
+    return canton in ["VD", "FR"], canton
 
 
 @mollie_bp.route("/checkout", methods=["GET", "POST"])
@@ -328,6 +369,18 @@ def checkout_info():
         if not billing_data["billing_email"] or not billing_data["billing_firstname"] or not billing_data["billing_lastname"]:
             flash("Merci de compléter vos informations de facturation.", "error")
             return redirect(url_for("mollie.checkout_info"))
+
+        # ✅ Vérification du canton (VD ou FR uniquement)
+        is_valid, canton = is_allowed_region(billing_data["billing_postal"])
+        if not is_valid:
+            flash("🚫 Livraison uniquement possible dans les cantons de Vaud et Fribourg.", "error")
+            return redirect(url_for("mollie.checkout_info"))
+        
+
+        # Met à jour automatiquement le champ canton si trouvé
+        if canton:
+            billing_data["billing_canton"] = canton
+            print(f"📍 Code postal {billing_data['billing_postal']} → canton détecté : {canton}")
 
         if user:
             if user.billing_info:
