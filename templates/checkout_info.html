@@ -49,11 +49,12 @@
             <!-- Rue et numéro -->
             <label>Rue et numéro</label>
             <input name="billing_address"
-                   pattern="^[0-9A-Za-zÀ-ÿ\s.'-]{5,100}$"
+                   pattern="^(?=.*[0-9])(?=.*[A-Za-zÀ-ÿ]).{5,100}$"
                    required
-                   title="Adresse invalide (5 à 100 caractères)."
+                   title="L'adresse doit contenir à la fois du texte et un numéro de bâtiment (ex. Rue du Lac 12)."
                    type="text"
                    value="{{ billing_data.billing_address if billing_data else (user.billing_info.street if user and user.billing_info else '') }}">
+
 
             <!-- Code postal -->
             <label>Code postal</label>

@@ -75,6 +75,15 @@
                 color: #ff6600;
             }
 
+        .delivery-info {
+            background-color: #f6f6f6;
+            border-left: 4px solid #ff6600;
+            padding: 12px 16px;
+            margin-top: 25px;
+            font-size: 0.95rem;
+            color: #444;
+        }
+
         footer {
             text-align: center;
             color: #666;
@@ -158,12 +167,17 @@
         {% endfor %}
         {% endif %}
 
-
         <!-- 🧮 Détail du total -->
         <div class="totals">
             <p>Sous-total : <strong>{{ '%.2f'|format(order.subtotal) }} {{ order.currency }}</strong></p>
             <p>Frais de livraison : <strong>{{ '%.2f'|format(order.shipping) }} {{ order.currency }}</strong></p>
             <p class="grand-total">💰 Total payé : <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong></p>
+        </div>
+
+        <!-- 🚚 Info livraison -->
+        <div class="delivery-info">
+            🚚 <strong>Livraison :</strong> effectuée par nos soins <em>en main propre</em> entre
+            <strong>5 à 10 jours</strong> dès la réception du paiement.
         </div>
 
         <footer>

@@ -1032,3 +1032,147 @@ html, body {
     padding: 0;
     box-sizing: border-box;
 }
+/* === 🛒 Tableau du panier cohérent sur toutes tailles === */
+.cart-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.cart-table {
+    width: 100%;
+    min-width: 750px; /* ✅ un peu plus large que mobile */
+    border-collapse: collapse;
+    color: #222;
+    text-align: center;
+}
+
+    .cart-table th, .cart-table td {
+        padding: 0.9rem;
+        border-bottom: 1px solid #ddd;
+        white-space: nowrap;
+    }
+
+    .cart-table th {
+        background: #ff6600;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .cart-table tr:last-child td {
+        border-bottom: none;
+    }
+
+/* === 🧾 Résumé du panier === */
+.cart-summary {
+    background: #fff;
+    color: #222;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 700px;
+    margin: 0 auto 2rem auto;
+}
+
+    .cart-summary hr {
+        border: 1px solid #eee;
+        margin: 1rem 0;
+    }
+
+    .cart-summary .cart-total {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #ff6600;
+    }
+
+/* === 🧭 Header responsive sans menu mobile === */
+header {
+    background: #000;
+    color: #ff6600;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 2px 8px rgba(255,165,0,0.2);
+}
+
+.header-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-align: center;
+}
+
+.logo-img {
+    height: 110px;
+    width: auto;
+}
+
+/* Navigation toujours visible */
+nav {
+    display: flex;
+    flex-wrap: wrap; /* ✅ les liens passent sur plusieurs lignes */
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem 1rem;
+    margin-top: 0.5rem;
+}
+
+    nav a {
+        color: #ff6600;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        transition: background 0.3s ease, color 0.3s ease;
+    }
+
+        nav a:hover,
+        nav a.active {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+        }
+
+/* Supprime le bouton burger */
+.menu-toggle {
+    display: none !important;
+}
+
+/* ✅ Empêche tout débordement horizontal */
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* 📱 Ajustements mobile */
+@media screen and (max-width: 768px) {
+    .logo-img {
+        height: 90px;
+    }
+
+    nav {
+        gap: 0.4rem 0.6rem;
+    }
+
+        nav a {
+            font-size: 0.9rem; /* ✅ liens légèrement plus petits */
+            padding: 0.25rem 0.5rem;
+        }
+}
+
+/* 📱 Encore plus petit (téléphones étroits < 480px) */
+@media screen and (max-width: 480px) {
+    nav a {
+        font-size: 0.8rem; /* ✅ texte compact mais lisible */
+        padding: 0.2rem 0.4rem;
+    }
+
+    .logo-img {
+        height: 80px;
+    }
+}
+

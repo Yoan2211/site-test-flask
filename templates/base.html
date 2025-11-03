@@ -56,10 +56,7 @@
                 </a>
             </h1>
 
-            <!-- 🔥 Bouton menu mobile -->
-            <div class="menu-toggle" onclick="toggleMenu()">☰</div>
-
-            <!-- 🔥 Menu principal -->
+            <!-- 🔥 Menu principal toujours visible -->
             <nav id="main-nav">
                 <a href="{{ url_for('home') }}" class="{{ 'active' if request.path == url_for('home') else '' }}">Accueil</a>
                 <a href="{{ url_for('gobelet') }}" class="{{ 'active' if request.path == url_for('gobelet') else '' }}">Produit</a>
@@ -77,6 +74,7 @@
             </nav>
         </div>
     </header>
+
 
     <main>
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -139,5 +137,46 @@
             nav.classList.toggle("open");
         }
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const path = location.pathname;
+
+            // Activer sur /cart ou /account (ou /compte selon ta route)
+            if (!(path.startsWith("/cart") || path.startsWith("/compte"))) return;
+
+            // Trouver le tableau sur la page
+            const table = document.querySelector("table");
+            if (!table) return;
+
+            // Trouver ou créer le meta viewport
+            const meta = document.querySelector('meta[name="viewport"]') || (() => {
+                const m = document.createElement('meta');
+                m.name = "viewport";
+                document.head.appendChild(m);
+                return m;
+            })();
+
+            // Mesurer la largeur du tableau vs écran
+            const tableWidth = table.scrollWidth;
+            const screenWidth = window.innerWidth;
+
+            if (tableWidth > screenWidth) {
+                // Calcul du dézoom (avec petite marge)
+                const scale = (screenWidth / tableWidth) * 0.95;
+
+                meta.setAttribute(
+                    "content",
+                    `width=${tableWidth}, initial-scale=${scale.toFixed(2)}, maximum-scale=3, user-scalable=yes`
+                );
+
+                console.log(`📱 Dézoom auto activé sur ${path}: scale=${scale.toFixed(2)}`);
+                document.body.classList.add("auto-dezoom");
+            } else {
+                meta.setAttribute("content", "width=device-width, initial-scale=1");
+            }
+        });
+    </script>
+
+
 </body>
 </html>

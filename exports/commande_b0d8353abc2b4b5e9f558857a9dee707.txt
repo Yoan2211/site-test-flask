@@ -1,0 +1,156 @@
+{
+    "resource": "order",
+    "id": "ord_odnCb6P4xqbmP4GgHzTGJ",
+    "profileId": "pfl_AhYqE7RZFn",
+    "method": "creditcard",
+    "amount": {
+        "value": "15.70",
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "isCancelable": false,
+    "metadata": {
+        "compressed": true,
+        "encoding": "base85",
+        "alg": "zlib",
+        "data": "c-mEvOHRZv5JazndL4zt6X)YC5^x8EB0KJQ42d25kwDQLh;wi;Y-T`1Z!Ep4>S}oh>m<5SOJE=>*&pbEi;0LvP#k7T`<`}ukceH?K><48>VZA&Fxkbr6f#!3(K>DvW<Bp|TRFF+>Y9pT)6Ko82&v};DJ89(n(SM7^0V}+TV(|<7|NGTCB^VH3lC>_v!V0W7`|x#^_gV51#L|_VFxbd81Ov+3oc>-Q}n^E7X(VFBm9Hoq7Bx+(y4&A@ByqYz`w>!&y6V)Y~Ty9q3jEYMu%~8dcq%YdQSEzt{wiUw@n)bjF!V+xTa-ST~D2FaSqLtO5yJDJ{3iO`Fe8t1{SV-9s"
+    },
+    "createdAt": "2025-11-03T11:10:17+00:00",
+    "mode": "test",
+    "locale": "fr_CH",
+    "billingAddress": {
+        "streetAndNumber": "hhhh 5",
+        "postalCode": "1555",
+        "city": "sss",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "hshshs",
+        "familyName": "lol",
+        "email": "hshaha@gmail.com"
+    },
+    "shopperCountryMustMatchBillingCountry": false,
+    "orderNumber": "b0d8353abc2b4b5e9f558857a9dee707",
+    "shippingAddress": {
+        "streetAndNumber": "hhhh 5",
+        "postalCode": "1555",
+        "city": "sss",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "hshshs",
+        "familyName": "lol",
+        "email": "hshaha@gmail.com"
+    },
+    "amountCaptured": {
+        "value": "15.70",
+        "currency": "CHF"
+    },
+    "paidAt": "2025-11-03T11:10:36+00:00",
+    "redirectUrl": "http://96d0b0332283.ngrok-free.app/payment/success",
+    "webhookUrl": "https://96d0b0332283.ngrok-free.app/webhook",
+    "lines": [
+        {
+            "resource": "orderline",
+            "id": "odl_pbnPA2Hq4EqHUNGgHzTGJ",
+            "orderId": "ord_odnCb6P4xqbmP4GgHzTGJ",
+            "name": "Gobelet personnalisé",
+            "sku": "gobelet",
+            "type": "physical",
+            "status": "paid",
+            "metadata": {
+                "options_json": "{\"activity_id\": null, \"add_results\": false, \"add_route\": false, \"add_text\": true, \"custom_text\": \"gggh\", \"custom_text_line1\": \"gggh\", \"custom_text_line2\": \"\", \"from_strava\": false, \"results\": null, \"route_local\": null, \"route_url\": null}"
+            },
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "9.80",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "9.80",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-11-03T11:10:17+00:00"
+        },
+        {
+            "resource": "orderline",
+            "id": "odl_BYQKJH8uHvXDWgGgHzTGJ",
+            "orderId": "ord_odnCb6P4xqbmP4GgHzTGJ",
+            "name": "Frais de livraison",
+            "sku": null,
+            "type": "shipping_fee",
+            "status": "paid",
+            "metadata": null,
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "5.90",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "5.90",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-11-03T11:10:17+00:00"
+        }
+    ],
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/orders/ord_odnCb6P4xqbmP4GgHzTGJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19359006/orders/ord_odnCb6P4xqbmP4GgHzTGJ",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-order",
+            "type": "text/html"
+        }
+    }
+}

@@ -3,6 +3,7 @@
 
 {% block content %}
 
+<!-- 🏁 Hero principale -->
 <section class="hero">
     <div class="hero-content">
         <h1>Transforme ta course Strava en un gobelet unique 🏆</h1>
@@ -38,25 +39,27 @@
     </div>
 </section>
 
+<!-- 💡 Concept -->
 <section class="concept-section reveal">
     <div class="concept-text">
         <h2>Une cup, une aventure.</h2>
         <p>
-            Chaque activité Strava raconte une histoire — un défi, un sommet, une victoire.
+            Chaque activité Strava raconte une histoire — un défi, un sommet, une victoire.<br>
             Nous la transformons en un <strong>objet unique</strong> grâce à l’impression 3D.
         </p>
     </div>
-
     <div class="concept-image">
         <img src="{{ url_for('static', filename='img/Cup_Inclined.png') }}"
              alt="Exemple de gobelet personnalisé CupMyRun">
     </div>
 </section>
 
-
+<!-- 🚀 Call-to-Action -->
 <section class="cta-section reveal">
-    <h2>Prêt à créer ton propre gobelet ?</h2>
-    <a href="{{ url_for('gobelet') }}" class="btn-cta">Personnaliser mon cup</a>
+    <div class="cta-content">
+        <h2>Prêt à créer ton propre gobelet ?</h2>
+        <a href="{{ url_for('gobelet') }}" class="btn-cta">Personnaliser mon cup</a>
+    </div>
 </section>
 
 {% endblock %}

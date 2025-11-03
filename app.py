@@ -3,7 +3,7 @@
 """
 @author: YA
 To DO :
-1) Windows Powershell: ouvrir un terminal dans le projet du site> ngrok config add-authtoken 32hpV03K5HSmz6ObDkYGhtsT78E_7Gx526uNHLqXeRwTCt6a2
+1) Windows Powershell: ouvrir un terminal dans le projet du site> ngrok config add-authtoken 32hpV03K5HSmz6ObDkYGhtsT78E_7Gx526uNHLqXeRwTCt6a2 OU ngrok config add-authtoken 34xxbMUscHVwv3jqZuk8itweQxX_3Z8dSDMbWQwX3fDtgprBu
 2) CMD: ngrok http http://localhost:5000
 3) Take URL from "Forwarding" (corresponding to NGROK_SERVER_URL in config.py)
 4) Change NGROK_SERVER_URL in config.py

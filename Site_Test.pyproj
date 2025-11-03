@@ -34,7 +34,6 @@
     <Compile Include="services\route_exporter.py" />
     <Compile Include="services\route_to_stl.py" />
     <Compile Include="routes\user_routes.py" />
-    <Compile Include="services\googledrive.py" />
     <Compile Include="models\db_database.py" />
     <Compile Include="services\manage_sendgrid.py" />
     <Compile Include="routes\strava_routes.py" />
@@ -79,6 +78,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="models\" />
+    <Folder Include="static\data\" />
     <Folder Include="utils\" />
     <Folder Include="services\" />
     <Folder Include="routes\" />

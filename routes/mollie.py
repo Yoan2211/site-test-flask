@@ -11,12 +11,12 @@ import io
 import json
 import requests
 import shutil
+import re
 
 from utils.tts_utils import extract_custom_text
 
 from models.db_database import db, User, BillingInfo, Order, OrderPhoto, Stock
 from services.manage_sendgrid import envoyer_email_sendgrid_Client, envoyer_email_sendgrid_Admin
-
 from services.strava_service import StravaService
 
 import math, polyline, trimesh
@@ -41,40 +41,60 @@ def cart_total():
 
 POSTAL_CANTONS = {}
 
+
 def load_postal_cantons():
     """
     Charge la liste officielle des codes postaux suisses depuis postal_codes.csv.
-    Exige les colonnes : PLZ et Kantonskürzel.
+    Le fichier doit contenir au minimum les colonnes : PLZ et Kantonskürzel.
+    Exemples de structure :
+        Ortschaftsname;PLZ;Kantonskürzel;...
     """
     global POSTAL_CANTONS
-    csv_path = os.path.join(os.path.dirname(__file__), "static", "data", "postal_codes.csv")
+
+    # Détermine le chemin absolu du fichier CSV
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(base_dir, "..", "static", "data", "postal_codes.csv")
 
     if not os.path.exists(csv_path):
         print(f"⚠️ Fichier postal_codes.csv introuvable à : {csv_path}")
         return
 
-    # Lecture flexible (tabulation ou point-virgule)
-    with open(csv_path, newline='', encoding='utf-8') as csvfile:
-        sample = csvfile.read(2048)
-        csvfile.seek(0)
-        dialect = csv.Sniffer().sniff(sample, delimiters=";\t,")
-        reader = csv.DictReader(csvfile, dialect=dialect)
-        for row in reader:
-            code = str(row.get("PLZ") or "").strip()
-            canton = str(row.get("Kantonskürzel") or "").strip().upper()
-            if code and canton:
-                POSTAL_CANTONS[code] = canton
+    try:
+        with open(csv_path, newline='', encoding='utf-8') as csvfile:
+            # Lecture flexible (tabulation, point-virgule ou virgule)
+            sample = csvfile.read(2048)
+            csvfile.seek(0)
+            dialect = csv.Sniffer().sniff(sample, delimiters=";\t,")
+            reader = csv.DictReader(csvfile, dialect=dialect)
 
-    print(f"✅ {len(POSTAL_CANTONS)} codes postaux chargés depuis postal_codes.csv")
+            for row in reader:
+                code = str(row.get("PLZ") or "").strip()
+                canton = str(row.get("Kantonskürzel") or "").strip().upper()
+                if code and canton:
+                    POSTAL_CANTONS[code] = canton
 
-# Charger les codes postaux dès le démarrage
-load_postal_cantons()
+        print(f"✅ {len(POSTAL_CANTONS)} codes postaux chargés depuis postal_codes.csv")
+
+    except Exception as e:
+        print(f"❌ Erreur lors du chargement des codes postaux : {e}")
 
 
 def is_allowed_region(postal_code):
-    """Retourne (True, canton) si le code postal appartient à VD ou FR."""
+    """
+    Vérifie si le code postal appartient à un canton autorisé (VD ou FR).
+    Retourne un tuple : (bool, canton)
+    """
     canton = POSTAL_CANTONS.get(str(postal_code))
     return canton in ["VD", "FR"], canton
+
+
+def get_canton(postal_code):
+    """Retourne simplement le canton associé au code postal (ex: 'VD', 'FR', 'ZH', etc.)"""
+    return POSTAL_CANTONS.get(str(postal_code))
+
+
+# Charger la base au démarrage du module
+load_postal_cantons()
 
 
 @mollie_bp.route("/checkout", methods=["GET", "POST"])
@@ -373,7 +393,7 @@ def checkout_info():
         # ✅ Vérification du canton (VD ou FR uniquement)
         is_valid, canton = is_allowed_region(billing_data["billing_postal"])
         if not is_valid:
-            flash("🚫 Livraison uniquement possible dans les cantons de Vaud et Fribourg.", "error")
+            flash("🚫 Livraison uniquement possible dans les cantons de Vaud et Fribourg. D'autres cantons seront ajoutés prochainement...", "error")
             return redirect(url_for("mollie.checkout_info"))
         
 
@@ -381,6 +401,15 @@ def checkout_info():
         if canton:
             billing_data["billing_canton"] = canton
             print(f"📍 Code postal {billing_data['billing_postal']} → canton détecté : {canton}")
+
+
+
+        # Vérifie que l'adresse contient au moins une lettre et un chiffre
+        address = billing_data["billing_address"]
+        if not re.search(r"[A-Za-zÀ-ÿ]", address) or not re.search(r"\d", address):
+            flash("L'adresse doit contenir à la fois du texte et un numéro de bâtiment (ex. Rue du Lac 12).", "error")
+            return redirect(url_for("mollie.checkout_info"))
+
 
         if user:
             if user.billing_info:
