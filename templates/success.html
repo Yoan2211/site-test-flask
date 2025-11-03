@@ -10,6 +10,7 @@
         <p style="text-align: center; font-size: 1.1rem;">
             Merci pour votre commande <strong>#{{ order.id }}</strong> !
         </p>
+
         <!-- 💌 Confirmation d'email -->
         <div style="
             display: flex;
@@ -30,14 +31,7 @@
             </p>
         </div>
 
-
-
-        <!-- 💰 Total -->
-        <div style="text-align: center; margin-top: 1rem; font-size: 1.2rem;">
-            Total payé : <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong>
-        </div>
-
-        <!-- 🧾 Détails du panier -->
+        <!-- 🧾 Détails de la commande -->
         <h3 style="text-align: center; margin-top: 2rem; color: #333;">🧾 Détails de la commande</h3>
         <div style="overflow-x: auto; margin-top: 1rem;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
@@ -64,23 +58,30 @@
             </table>
         </div>
 
-        <!-- 🚚 Livraison -->
-        {% if order.shipping_cost %}
+        <!-- 🚚 Frais de livraison -->
+        {% set shipping_cost = order.shipping_cost if order.shipping_cost is defined and order.shipping_cost else 5.90 %}
         <p style="text-align: right; margin-top: 1rem; font-size: 1rem;">
-            Frais de livraison : <strong>{{ '%.2f'|format(order.shipping_cost) }} {{ order.currency }}</strong>
+            🚚 Frais de livraison :
+            <strong>{{ '%.2f'|format(shipping_cost) }} {{ order.currency or 'CHF' }}</strong>
         </p>
-        {% endif %}
+
+
+        <!-- 💰 Total global -->
+        <div style="text-align: right; margin-top: 0.5rem; font-size: 1.2rem;">
+            💰 Total payé :
+            <strong>{{ '%.2f'|format(order.total) }} {{ order.currency }}</strong>
+        </div>
 
         <!-- 🏠 Bouton retour -->
         <div style="text-align: center; margin-top: 2rem;">
             <a href="{{ url_for('cart_view') }}" class="btn" style="
-          background-color: #0a8;
-          color: white;
-          padding: 0.7rem 1.5rem;
-          border-radius: 8px;
-          text-decoration: none;
-          font-weight: 600;
-          transition: background 0.3s;">
+                background-color: #0a8;
+                color: white;
+                padding: 0.7rem 1.5rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                transition: background 0.3s;">
                 ← Retour à la boutique
             </a>
         </div>

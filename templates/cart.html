@@ -2,7 +2,7 @@
 {% block title %}Votre panier{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container full-width-cart">
     <h2 style="color: #ff6600; margin-bottom: 1.5rem;">🛒 Votre panier</h2>
 
     {% if items %}
@@ -51,6 +51,9 @@
             <form action="{{ url_for('clear_cart') }}" method="post">
                 <button type="submit" class="btn">Vider le panier</button>
             </form>
+            <form action="{{ url_for('gobelet') }}" method="get">
+                <button type="submit" class="btn" style="background-color: #444;">↩️ Poursuivre mes achats</button>
+            </form>
             <form action="{{ url_for('mollie.checkout_info') }}" method="post">
                 <button type="submit" class="btn">Procéder au paiement</button>
             </form>
@@ -60,7 +63,17 @@
     {% else %}
     <div class="card-light" style="text-align: center; margin-top: 2rem;">
         <p style="color: #ccc;">Votre panier est vide.</p>
+        <a href="{{ url_for('gobelet') }}" class="btn" style="margin-top: 1rem;">🛍️ Retourner à la boutique</a>
     </div>
     {% endif %}
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Active le mode "scroll horizontal autorisé" pour le panier
+        document.body.classList.add("cart-open");
+        document.documentElement.classList.add("cart-open");
+    });
+</script>
+
+
 {% endblock %}

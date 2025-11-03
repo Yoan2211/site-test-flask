@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>{% block title %}Ma boutique{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}" media="screen and (max-width: 768px)">
     <style>
@@ -19,7 +19,6 @@
             }
         }
 
-        /* Flash messages */
         .flash-messages {
             margin: 1rem;
         }
@@ -53,11 +52,15 @@
             <h1 class="logo">
                 <a href="{{ url_for('home') }}">
                     <img src="{{ url_for('static', filename='img/logo_cupmyrun.png') }}"
-                         alt="CupMyRun"
-                         class="logo-img">
+                         alt="CupMyRun" class="logo-img">
                 </a>
             </h1>
-            <nav>
+
+            <!-- 🔥 Bouton menu mobile -->
+            <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+
+            <!-- 🔥 Menu principal -->
+            <nav id="main-nav">
                 <a href="{{ url_for('home') }}" class="{{ 'active' if request.path == url_for('home') else '' }}">Accueil</a>
                 <a href="{{ url_for('gobelet') }}" class="{{ 'active' if request.path == url_for('gobelet') else '' }}">Produit</a>
                 <a href="{{ url_for('cart_view') }}" class="{{ 'active' if request.path == url_for('cart_view') else '' }}">Panier</a>
@@ -76,7 +79,6 @@
     </header>
 
     <main>
-        <!-- Messages flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="flash-messages">
@@ -104,8 +106,8 @@
         </p>
     </footer>
 
-
     <script>
+        // Animation des éléments lors du scroll
         document.addEventListener("scroll", () => {
             document.querySelectorAll('.reveal').forEach(el => {
                 if (el.getBoundingClientRect().top < window.innerHeight - 100) {
@@ -113,28 +115,29 @@
                 }
             });
         });
-    </script>
-    <script>
+
+        // Animation des étapes sur la page d’accueil
         document.addEventListener("scroll", () => {
             const steps = document.querySelectorAll(".step");
             const stepsContainer = document.querySelector(".steps");
+            if (!stepsContainer) return;
             let visibleCount = 0;
-
             steps.forEach(step => {
                 const rect = step.getBoundingClientRect();
                 if (rect.top < window.innerHeight - 100) {
                     step.classList.add("visible");
                 }
             });
-
-            // Compter les étapes visibles
             visibleCount = Array.from(steps).filter(s => s.classList.contains("visible")).length;
-
-            // Mettre à jour la ligne orange
             stepsContainer.classList.remove("progress-1", "progress-2", "progress-3");
             if (visibleCount > 0) stepsContainer.classList.add(`progress-${visibleCount}`);
         });
-    </script>
 
+        // 🔥 Menu plein écran mobile
+        function toggleMenu() {
+            const nav = document.getElementById("main-nav");
+            nav.classList.toggle("open");
+        }
+    </script>
 </body>
 </html>

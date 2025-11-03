@@ -17,6 +17,8 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 nav {
@@ -54,14 +56,17 @@ footer {
 .product-page {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 2rem;
-    max-width: 1000px;
+    width: 100%;
     margin: 2rem auto;
-    padding: 2rem;
+    padding: 2rem 1rem;
     background-color: #1a1a1a;
     border-radius: 16px;
     box-shadow: 0 6px 18px rgba(255, 165, 0, 0.1);
+    box-sizing: border-box;
 }
+
 
 .product-image {
     flex: 1 1 300px;
@@ -233,10 +238,13 @@ button {
     display: flex;
     flex-wrap: wrap;
     gap: 2rem;
-    max-width: 1000px;
-    margin: 2rem auto;
-    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    box-sizing: border-box;
 }
+
 
 .image-box {
     flex: 1 1 300px;
@@ -606,6 +614,10 @@ nav a.active {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    width: 100%;
+    max-width: 1200px; /* optionnel si tu veux limiter le contenu central sur grand écran */
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .logo a {
@@ -1010,4 +1022,13 @@ footer {
     nav {
         text-align: center;
     }
+}
+/* ✅ Empêche tout débordement horizontal global */
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }

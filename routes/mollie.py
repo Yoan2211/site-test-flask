@@ -39,6 +39,7 @@ def cart_total():
 @mollie_bp.route("/checkout", methods=["GET", "POST"])
 def checkout():
     """Crée une commande Mollie (ordre) et redirige vers l'URL de checkout."""
+    import zlib, base64  # ✅ Ajout compression
     MOLLIE_API_KEY = current_app.config.get("MOLLIE_API_KEY")
     WEBHOOK_URL = current_app.config.get("WEBHOOK_URL")
 
@@ -99,44 +100,126 @@ def checkout():
         "country": getattr(billing_info, "country", "CH"),
     }
 
-    # 🧱 Payload de commande Mollie
+    # ----------------------- Compress metadata, car on doit envoyé <1ko à Mollie ------------------------
+    import json, zlib, bz2, lzma, base64
+
+    def clean_metadata(d):
+        if isinstance(d, dict):
+            return {k: clean_metadata(v) for k, v in d.items() if v not in (None, "", {}, [], False)}
+        if isinstance(d, list):
+            return [clean_metadata(v) for v in d if v not in (None, "", {}, [], False)]
+        return d
+
+    # 1) Métadonnées complètes
+    metadata_full = {
+        "order_id": order_uuid,
+        "items": items,
+        "subtotal": subtotal,
+        "shipping": shipping_fee,
+        "total": total,
+        "currency": "CHF",
+        "guest_id": session.get("guest_id"),
+        "user_id": session.get("user_id"),
+    }
+
+    # 2) Nettoyage (supprime None/vides) + JSON compact
+    metadata_clean = clean_metadata(metadata_full)
+    metadata_json  = json.dumps(metadata_clean, ensure_ascii=False, separators=(',', ':')).encode("utf-8")
+
+    # 3) Multi-algorithmes → on prend le plus petit
+    candidates = []
+
+    # zlib niveau 9
+    try:
+        z_bytes = zlib.compress(metadata_json, level=9)
+        candidates.append(("zlib", z_bytes))
+    except Exception:
+        pass
+
+    # bzip2 niveau 9
+    try:
+        b_bytes = bz2.compress(metadata_json, compresslevel=9)
+        candidates.append(("bz2", b_bytes))
+    except Exception:
+        pass
+
+    # lzma (xz) preset 9 — souvent le plus petit sur >1–2 Ko
+    try:
+        l_bytes = lzma.compress(metadata_json, preset=9)
+        candidates.append(("lzma", l_bytes))
+    except Exception:
+        pass
+
+    # 4) Garde le plus petit et encode en base85
+    alg, best_bytes = min(candidates, key=lambda t: len(t[1])) if candidates else ("raw", metadata_json)
+    metadata_encoded = base64.b85encode(best_bytes).decode("ascii")
+
+    # 5) Logs utiles
+    orig_kb = len(metadata_json) / 1024
+    comp_kb = len(metadata_encoded.encode("ascii")) / 1024
+    ratio   = (1 - comp_kb / orig_kb) * 100 if orig_kb else 0
+    print(f"🧮 Avant: {orig_kb:.2f} Ko → Après: {comp_kb:.2f} Ko (alg={alg}, gain {ratio:.1f} %)")
+
+    # 🚨 Garde-fou : vérifie la taille du metadata compressé
+    metadata_size_bytes = len(metadata_encoded.encode("ascii"))
+    MAX_MOLLIE_METADATA = 990  # 1 Ko de marge (Mollie refuse >1024 octets)
+
+    if metadata_size_bytes > MAX_MOLLIE_METADATA:
+        flash((
+            f"⚠️ Votre commande est trop volumineuse ({metadata_size_bytes/1024:.2f} Ko) "
+            "pour être transmise à Mollie. "
+            "Merci de réduire le nombre de gobelets ou le contenu personnalisé avant de réessayer."
+        ), "error")
+        current_app.logger.warning(
+            f"❌ Commande {order_uuid} annulée : metadata compressé = {metadata_size_bytes} octets (> {MAX_MOLLIE_METADATA})"
+        )
+        return redirect(url_for("cart_view"))
+
+    # 6) Injection dans le payload Mollie
     order_payload = {
         "amount": {"currency": "CHF", "value": f"{total:.2f}"},
         "orderNumber": order_uuid,
         "redirectUrl": url_for("mollie.payment_success", _external=True),
         "webhookUrl": WEBHOOK_URL,
         "metadata": {
-            "order_id": order_uuid,
-            "items": items,
-            "subtotal": subtotal,
-            "shipping": shipping_fee,
-            "total": total,
-            "currency": "CHF",
-            "guest_id": session.get("guest_id"),
-            "user_id": session.get("user_id"),
+            "compressed": True,
+            "encoding": "base85",
+            "alg": alg,                 # <- "zlib" | "bz2" | "lzma" | "raw"
+            "data": metadata_encoded,
         },
         "locale": "fr_CH",
         "billingAddress": billing_data_mollie,
         "shippingAddress": billing_data_mollie,
         "lines": [],
     }
+    # -----------------------------------------------------------------------------------------------------------
+
 
     # ➕ Lignes produits
     for it in items:
-        line = {
-            "type": "physical",
-            "sku": it.get("sku"),
-            "name": it.get("name"),
-            "quantity": it.get("qty"),
-            "unitPrice": {"currency": "CHF", "value": f"{it.get('unit_price'):.2f}"},
-            "totalAmount": {"currency": "CHF", "value": f"{it.get('total'):.2f}"},
-            "vatRate": "0.00",
-            "vatAmount": {"currency": "CHF", "value": "0.00"},
-            "metadata": it.get("options", {}),
-        }
-        order_payload["lines"].append(line)
+        qty = int(it.get("qty", 1))
+        options = it.get("options", {}) or {}
 
-    # 🚚 Ligne supplémentaire pour les frais de livraison
+        for i in range(qty):
+            try:
+                metadata_serialized = json.dumps(options, ensure_ascii=False)
+            except Exception:
+                metadata_serialized = str(options)
+
+            line = {
+                "type": "physical",
+                "sku": it.get("sku"),
+                "name": it.get("name"),
+                "quantity": 1,
+                "unitPrice": {"currency": "CHF", "value": f"{it.get('unit_price'):.2f}"},
+                "totalAmount": {"currency": "CHF", "value": f"{it.get('unit_price'):.2f}"},
+                "vatRate": "0.00",
+                "vatAmount": {"currency": "CHF", "value": "0.00"},
+                "metadata": {"options_json": metadata_serialized},
+            }
+            order_payload["lines"].append(line)
+
+    # 🚚 Frais de livraison
     order_payload["lines"].append({
         "name": "Frais de livraison",
         "type": "shipping_fee",
@@ -147,8 +230,7 @@ def checkout():
         "vatAmount": {"currency": "CHF", "value": "0.00"},
     })
 
-    # 💾 Création de la commande en base avant Mollie
-    from models.db_database import Order
+    # 💾 Création en base avant Mollie
     try:
         existing_order = Order.query.filter_by(order_number=order_uuid).first()
         if not existing_order:
@@ -174,8 +256,9 @@ def checkout():
     except Exception as e:
         current_app.logger.exception(f"Erreur création commande en base avant Mollie : {e}")
 
-    # 🔗 Création réelle via l’API Mollie
+    # 🔗 Création réelle via API Mollie
     try:
+        print("📦 Payload envoyé à Mollie:", json.dumps(order_payload, indent=2))
         response = requests.post(
             "https://api.mollie.com/v2/orders",
             json=order_payload,
@@ -203,6 +286,8 @@ def checkout():
     session["last_order_id"] = mollie_order["id"]
 
     return redirect(checkout_url)
+
+
 
 
 # ----------------- Route: checkout-info -----------------
@@ -268,7 +353,6 @@ def checkout_info():
         else:
             session['guest_billing'] = billing_data
 
-        flash("Informations de facturation enregistrées.", "success")
         return redirect(url_for("mollie.checkout"))
 
     return render_template("checkout_info.html", user=user, billing_data=billing_data)
@@ -293,6 +377,32 @@ def mollie_webhook():
         order_data = response.json()
         status = order_data.get("status")
         metadata = order_data.get("metadata", {})
+        import json, zlib, bz2, lzma, base64
+
+        if metadata.get("compressed") and metadata.get("data"):
+            try:
+                enc = metadata.get("encoding", "base64")
+                alg = metadata.get("alg", "zlib")
+                raw = base64.b85decode(metadata["data"]) if enc == "base85" else base64.b64decode(metadata["data"])
+
+                if alg == "zlib":
+                    payload = zlib.decompress(raw)
+                elif alg == "bz2":
+                    payload = bz2.decompress(raw)
+                elif alg == "lzma":
+                    payload = lzma.decompress(raw)
+                elif alg == "raw":
+                    payload = raw
+                else:
+                    raise ValueError(f"Algorithme non supporté: {alg}")
+
+                metadata = json.loads(payload.decode("utf-8"))
+                current_app.logger.info(f"✅ Metadata décompressé (alg={alg}, enc={enc}, taille_json={len(payload)} octets)")
+            except Exception as e:
+                current_app.logger.warning(f"⚠️ Erreur décompression metadata : {e}")
+
+
+
         internal_order_id = metadata.get("order_id")
         mode = order_data.get("mode", "live")
         print("📦 [DEBUG] Metadata reçu de Mollie :", json.dumps(order_data.get("metadata", {}), indent=2))
@@ -388,12 +498,37 @@ def mollie_webhook():
         with open(txt_path, "w", encoding="utf-8") as f:
             f.write(json.dumps(order_data, indent=4, ensure_ascii=False))
 
-        # ----------------------------------------------------
-        # 🧮 Construction de l’objet order_view pour les emails
+                # ----------------------------------------------------
+        # 🧮 Reconstruction des items et des metadata
         # ----------------------------------------------------
         root_metadata = order_data.get("metadata", {}) or {}
         billing = order_data.get("billingAddress", {}) or {}
-        items = root_metadata.get("items", [])
+        items = []
+
+        for line in order_data.get("lines", []):
+            # Ignore la ligne "frais de livraison"
+            if line.get("type") == "shipping_fee":
+                continue
+
+            meta = line.get("metadata", {}) or {}
+            options = {}
+
+            # 🧠 Si options_json est présent, on tente de décoder
+            if "options_json" in meta:
+                try:
+                    options = json.loads(meta["options_json"])
+                except Exception:
+                    options = {"raw_metadata": str(meta)}
+
+            # 🧾 Recompose l’article complet
+            item = {
+                "name": line.get("name"),
+                "qty": line.get("quantity"),
+                "unit_price": float(line.get("unitPrice", {}).get("value", 0)),
+                "total": float(line.get("totalAmount", {}).get("value", 0)),
+                "options": options,
+            }
+            items.append(item)
 
         # 🔒 Récupération sûre des totaux
         subtotal = float(root_metadata.get("subtotal", 0.0))
@@ -411,6 +546,7 @@ def mollie_webhook():
                     subtotal += amount_val
             total = subtotal + shipping
 
+        # ✅ Structure finale de la commande
         order_view = {
             "id": order.order_number,
             "currency": order.currency or "CHF",
@@ -422,10 +558,9 @@ def mollie_webhook():
             "activity_id": root_metadata.get("activity_id"),
             "user_id": root_metadata.get("user_id"),
             "guest_id": root_metadata.get("guest_id"),
-            "options": {
-                "activity_id": root_metadata.get("activity_id"),
-            },
+            "options": {},
         }
+
 
 
         # =====================================================
@@ -539,11 +674,22 @@ def payment_success():
                 }
                 for l in mollie_data["lines"]
             ]
+            # 🚚 Extraction du prix de livraison s'il existe
+            shipping_lines = [
+                l for l in mollie_data["lines"] if l.get("type") == "shipping_fee"
+            ]
+            if shipping_lines:
+                shipping_total = sum(
+                    float(l.get("totalAmount", {}).get("value", 0)) for l in shipping_lines
+                )
+                order["shipping_cost"] = shipping_total
+            else:
+                # Si Mollie ne renvoie pas de ligne de type "shipping_fee", on met une valeur par défaut
+                order["shipping_cost"] = 5.90  # 💡 adapte selon ton tarif réel
 
     except Exception as e:
         print("❌ Erreur lors de la récupération depuis Mollie :", e)
 
-    flash("Commande payée ✅ Merci pour votre achat !", "success")
     session["cart_items"] = []
 
     # Pas d’email à afficher, juste la phrase générique

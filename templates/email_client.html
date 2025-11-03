@@ -122,32 +122,42 @@
         </table>
 
         <!-- 🧩 Options personnalisées -->
-        {% set first_item = order.line_items[0] if order.line_items|length > 0 else None %}
-        {% if first_item and first_item.options %}
+        {% if order.line_items and order.line_items|length > 0 %}
         <h3>✨ Vos options personnalisées</h3>
-        <ul style="list-style: none; padding-left: 0; line-height: 1.6;">
-            {% if first_item.options.add_text %}
-            <li>✍️ <strong>Texte personnalisé :</strong> "{{ first_item.options.custom_text or 'Non spécifié' }}"</li>
-            {% endif %}
 
-            {% if first_item.options.add_results and first_item.options.results %}
-            <li>
-                🏃 <strong>Résultats ajoutés :</strong>
-                {{ first_item.options.results.time }} /
-                {{ first_item.options.results.distance }} km
-                ({{ first_item.options.results.pace }}/km)
-            </li>
-            {% endif %}
+        {% for item in order.line_items %}
+        <div style="margin-bottom: 1rem;">
+            <h4 style="margin-bottom: 0.3rem;">🥤 {{ item.name }} — <span style="color: gray;">{{ item.color or 'Couleur non spécifiée' }}</span></h4>
+            {% if item.options %}
+            <ul style="list-style: none; padding-left: 0; line-height: 1.6; margin: 0;">
+                {% if item.options.add_text %}
+                <li>✍️ <strong>Texte personnalisé :</strong> "{{ item.options.custom_text or 'Non spécifié' }}"</li>
+                {% endif %}
 
-            {% if first_item.options.add_route %}
-            <li>🗺️ <strong>Tracé de votre activité :</strong> ajouté ✅</li>
-            {% endif %}
+                {% if item.options.add_results and item.options.results %}
+                <li>
+                    🏃 <strong>Résultats ajoutés :</strong>
+                    {{ item.options.results.time }} /
+                    {{ item.options.results.distance }} km
+                    ({{ item.options.results.pace }}/km)
+                </li>
+                {% endif %}
 
-            {% if not first_item.options.add_text and not first_item.options.add_results and not first_item.options.add_route %}
-            <li>❌ Aucune option personnalisée sélectionnée</li>
+                {% if item.options.add_route %}
+                <li>🗺️ <strong>Tracé de votre activité :</strong> ajouté ✅</li>
+                {% endif %}
+
+                {% if not item.options.add_text and not item.options.add_results and not item.options.add_route %}
+                <li>❌ Aucune option personnalisée sélectionnée</li>
+                {% endif %}
+            </ul>
+            {% else %}
+            <p style="margin: 0;">❌ Aucune option personnalisée pour cet article.</p>
             {% endif %}
-        </ul>
+        </div>
+        {% endfor %}
         {% endif %}
+
 
         <!-- 🧮 Détail du total -->
         <div class="totals">
