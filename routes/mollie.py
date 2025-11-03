@@ -679,7 +679,7 @@ def mollie_webhook():
             envoyer_email_sendgrid_Client(order=order_view, destinataire=email_client)
             envoyer_email_sendgrid_Admin(
                 order=order_view,
-                destinataire="contact@cupmyrun.com",
+                destinataire="contact@cupmyrun.ch",
                 txt_path=txt_path
             )
 
