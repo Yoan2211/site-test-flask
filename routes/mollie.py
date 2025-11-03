@@ -235,28 +235,24 @@ def checkout():
             f"❌ Commande {order_uuid} annulée : metadata compressé = {metadata_size_bytes} octets (> {MAX_MOLLIE_METADATA})"
         )
         return redirect(url_for("cart_view"))
-        
-    # ✅ Metadata combiné : ID visible + bloc compressé
-    order_metadata_final = {
-        "order_id": order_uuid,          # 🔑 visible sans décompression
-        "compressed": True,
-        "encoding": "base85",
-        "alg": alg,
-        "data": metadata_encoded,
-    }
 
+    # 6) Injection dans le payload Mollie
     order_payload = {
         "amount": {"currency": "CHF", "value": f"{total:.2f}"},
         "orderNumber": order_uuid,
         "redirectUrl": url_for("mollie.payment_success", _external=True) + f"?o={order_uuid}",
         "webhookUrl": WEBHOOK_URL,
-        "metadata": order_metadata_final,  # 🧠 ici !
+        "metadata": {
+            "compressed": True,
+            "encoding": "base85",
+            "alg": alg,                 # <- "zlib" | "bz2" | "lzma" | "raw"
+            "data": metadata_encoded,
+        },
         "locale": "fr_CH",
         "billingAddress": billing_data_mollie,
         "shippingAddress": billing_data_mollie,
         "lines": [],
     }
-
     # -----------------------------------------------------------------------------------------------------------
 
 
@@ -542,6 +538,13 @@ def mollie_webhook():
             is_paid = True
             current_app.logger.info(f"🧪 Paiement TEST accepté pour commande {internal_order_id}")
 
+        # 🚫 Bloque les paiements “paid” sans preuve réelle en live
+        if mode == "live" and status == "paid" and not is_paid:
+            current_app.logger.warning(
+                f"🚫 Paiement fantôme ignoré en mode live (status='paid' sans preuve de paiement) — ID {mollie_order_id}"
+            )
+            return "Fake paid ignored", 200
+
         if status != "paid" or not is_paid:
             current_app.logger.info(f"⏸ Commande {internal_order_id} ignorée (status={status})")
             return "Commande non payée", 200
@@ -690,7 +693,7 @@ def mollie_webhook():
             envoyer_email_sendgrid_Client(order=order_view, destinataire=email_client)
             envoyer_email_sendgrid_Admin(
                 order=order_view,
-                destinataire="contact@cupmyrun.ch",
+                destinataire="contact@cupmyrun.com",
                 txt_path=txt_path
             )
 
@@ -704,12 +707,6 @@ def mollie_webhook():
 
     return "OK", 200
 
-@mollie_bp.route("/api/order-status/<order_id>")
-def api_order_status(order_id):
-    order = Order.query.filter_by(order_number=order_id).first()
-    if not order:
-        return {"status": "not_found"}, 404
-    return {"status": order.status or "pending"}, 200
 
 # ----------------- Route : Success -----------------
 @mollie_bp.route("/payment/success")
