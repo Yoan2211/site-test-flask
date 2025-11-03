@@ -235,24 +235,28 @@ def checkout():
             f"❌ Commande {order_uuid} annulée : metadata compressé = {metadata_size_bytes} octets (> {MAX_MOLLIE_METADATA})"
         )
         return redirect(url_for("cart_view"))
+        
+    # ✅ Metadata combiné : ID visible + bloc compressé
+    order_metadata_final = {
+        "order_id": order_uuid,          # 🔑 visible sans décompression
+        "compressed": True,
+        "encoding": "base85",
+        "alg": alg,
+        "data": metadata_encoded,
+    }
 
-    # 6) Injection dans le payload Mollie
     order_payload = {
         "amount": {"currency": "CHF", "value": f"{total:.2f}"},
         "orderNumber": order_uuid,
         "redirectUrl": url_for("mollie.payment_success", _external=True) + f"?o={order_uuid}",
         "webhookUrl": WEBHOOK_URL,
-        "metadata": {
-            "compressed": True,
-            "encoding": "base85",
-            "alg": alg,                 # <- "zlib" | "bz2" | "lzma" | "raw"
-            "data": metadata_encoded,
-        },
+        "metadata": order_metadata_final,  # 🧠 ici !
         "locale": "fr_CH",
         "billingAddress": billing_data_mollie,
         "shippingAddress": billing_data_mollie,
         "lines": [],
     }
+
     # -----------------------------------------------------------------------------------------------------------
 
 
