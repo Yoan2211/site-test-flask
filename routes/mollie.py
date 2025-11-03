@@ -90,7 +90,7 @@ def get_cart_items():
 def cart_total():
     """
     Calcule le total du panier (hors livraison),
-    en prenant en compte les options et le rabais sur la 3e option.
+    en prenant en compte les options et le rabais de 1 CHF sur la 3e option.
     """
     items = get_cart_items()
     total = 0.0
@@ -100,22 +100,23 @@ def cart_total():
         base_price = float(item.get("unit_price", 0.0))
         options = item.get("options", [])
 
-        # 💡 Calcul du supplément en fonction du nombre d'options
         option_count = len(options)
         option_supplement = 0.0
 
         if option_count == 1:
             option_supplement = 2.9
         elif option_count == 2:
-            option_supplement = 2.9  # pas de rabais encore
+            option_supplement = 2.9 * 2
         elif option_count >= 3:
-            option_supplement = 1.9  # rabais appliqué
+            # 2 options à 2.9 CHF + 1 option à 1.9 CHF (rabais sur la 3e)
+            option_supplement = 2.9 * 2 + 1.9
 
         # total unitaire avec options
         item_total = (base_price + option_supplement) * qty
         total += item_total
 
     return round(total, 2)
+
 
 # ============================================================
 # 🗺️ Vérification du canton à partir du code postal (NPA)
