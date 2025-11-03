@@ -86,14 +86,14 @@
                     margin: 1.5rem 0;
                     color: #ffb366;
                 ">
-                                    <h3 style="margin:0 0 .5rem; color:#ff9a3d; font-size:1.05rem;">💰 Tarification des options</h3>
-                                    <p style="margin:0; line-height:1.5;">
-                                        Chaque option ajoutée (texte personnalisé, résultats, tracé GPS) coûte
-                                        <strong>+ 2.90 CHF</strong>.<br>
-                                        Si vous choisissez les <strong>3 options</strong>, la troisième bénéficie d’un
-                                        <strong>rabais de 1 CHF</strong> 🤩.
-                                    </p>
-                                </div>
+                    <h3 style="margin:0 0 .5rem; color:#ff9a3d; font-size:1.05rem;">💰 Tarification des options</h3>
+                    <p style="margin:0; line-height:1.5;">
+                        Chaque option ajoutée (texte personnalisé, résultats, tracé GPS) coûte
+                        <strong>+ 2.90 CHF</strong>.<br>
+                        Si vous choisissez les <strong>3 options</strong>, la troisième bénéficie d’un
+                        <strong>rabais de 1 CHF</strong> 🤩.
+                    </p>
+                </div>
 
 
                 <!-- 🆕 Option texte personnalisé -->
@@ -112,7 +112,7 @@
                                name="custom_text_line1"
                                maxlength="15"
                                placeholder="Ex. FINISHER 2025"
-                               pattern="^[A-Za-zÀ-ÿ0-9\\s\\-_!?.]{0,15}$">
+                               pattern="^[A-Za-zÀ-ÿ0-9 _\\-!?.]{0,15}$">
 
                         <!-- Ligne 2 -->
                         <label for="custom_text_line2">Ligne 2 (max. 15 caractères)</label>
@@ -121,7 +121,7 @@
                                name="custom_text_line2"
                                maxlength="15"
                                placeholder="(optionnel)"
-                               pattern="^[A-Za-zÀ-ÿ0-9\\s\\-_!?.]{0,15}$">
+                               pattern="^[A-Za-zÀ-ÿ0-9 _\\-!?.]{0,15}$">
 
                         <p class="text-note" style="margin-top: 0.6rem;">
                             ✏️ La taille du texte sera automatiquement ajustée pour occuper toute la face du gobelet :<br>
@@ -131,6 +131,16 @@
                         </p>
                     </div>
                 </fieldset>
+
+                <script>
+                    // Supprime uniquement les espaces à la fin quand on quitte le champ
+                    document.querySelectorAll('#custom_text_line1, #custom_text_line2').forEach(input => {
+                        input.addEventListener('blur', () => {
+                            input.value = input.value.trimEnd();
+                        });
+                    });
+                </script>
+
 
                 <!-- JS pour afficher/masquer les champs et valider -->
                 <script>

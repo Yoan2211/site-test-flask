@@ -429,3 +429,22 @@ main {
         margin-top: 0.5rem !important; /* petit espace visuel harmonieux */
     }
 }
+/* === 🧾 Correction texte À propos sur mobile === */
+@media screen and (max-width: 768px) {
+    .about-us-section p {
+        text-align: left !important; /* empêche les espacements irréguliers */
+        text-justify: auto !important;
+        hyphens: none !important;
+        word-spacing: normal !important;
+        letter-spacing: normal !important;
+        line-height: 1.6 !important; /* lisibilité mobile */
+    }
+
+    .about-us-section {
+        padding: 2rem 1rem !important;
+    }
+
+        .about-us-section h2 {
+            font-size: 1.6rem !important;
+        }
+}

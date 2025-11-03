@@ -28,7 +28,7 @@
             Notre aventure a commencé sur les bancs du CPNV à Yverdon, où nous avons obtenu notre CFC en électronique.<br>
             Aujourd’hui, Nolan est bientôt ingénieur et Yoan bientôt médecin.<br>
             Ensemble, nous avons uni nos compétences : la santé et le sport d’un côté, l’électronique, l’impression 3D et l’ingénierie de l’autre.<br>
-            De cette synergie est née <strong>CupsMyRun</strong>, un projet qui reflète notre passion commune : créer des objets uniques qui vous font revivre chaque course et partager votre histoire.
+            De cette synergie est née <strong>CupMyRun</strong>, un projet qui reflète notre passion commune : créer des objets uniques qui vous font revivre chaque course et partager votre histoire.
         </p>
     </div>
 
@@ -55,20 +55,40 @@
         align-items: center;
         text-align: center;
         margin: 3rem 0;
+        padding: 0 1rem;
     }
 
     .founders-photo {
-        width: 260px;
-        height: auto;
-        border-radius: 50%;
+        width: 100%;
+        max-width: 320px; /* limite la taille sur grand écran */
+        aspect-ratio: 1 / 1; /* carré logique pour garder le bon ratio */
+        object-fit: cover; /* évite toute déformation */
+        border-radius: 25%; /* forme ovale douce */
         margin-bottom: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        border: 3px solid #ff6600;
+        transition: all 0.3s ease;
     }
 
     .founders-text {
         max-width: 800px;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         line-height: 1.6;
     }
+
+    /* ✅ Version mobile : plus petite et parfaitement ronde */
+    @media (max-width: 768px) {
+        .founders-photo {
+            max-width: 200px;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%; /* rond */
+        }
+
+        .founders-text {
+            font-size: 1rem;
+            padding: 0 1rem;
+        }
+    }
 </style>
+
 {% endblock %}
