@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Votre panier{% endblock %}
+{% block title %}Votre panier | CupMyRun{% endblock %}
+{% block description %}Consultez votre panier CupMyRun et finalisez votre commande de gobelets 3D personnalisés, designés et imprimés en Suisse.{% endblock %}
+
 
 {% block content %}
 <div class="container full-width-cart">
@@ -91,9 +93,9 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    document.body.classList.add("cart-open");
-    document.documentElement.classList.add("cart-open");
-});
+    document.addEventListener("DOMContentLoaded", function () {
+        document.body.classList.add("cart-open");
+        document.documentElement.classList.add("cart-open");
+    });
 </script>
 {% endblock %}
