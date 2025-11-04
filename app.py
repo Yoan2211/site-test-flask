@@ -11,7 +11,7 @@ To DO :
 5) Change Webhook in Mollie
 6) Change Webhook in Strava
 """
-from flask import render_template, request, redirect, url_for, session, flash
+from flask import render_template, request, redirect, url_for, session, flash, send_from_directory
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 
@@ -106,6 +106,14 @@ def stl_viewer():
 @app.route("/")
 def home():
     return render_template("home.html")
+
+@app.route("/sitemap.xml")
+def sitemap():
+    return send_from_directory(".", "sitemap.xml")
+
+@app.route("/robots.txt")
+def robots():
+    return send_from_directory("static", "robots.txt")
 
 # -------------------
 # Gobelet
