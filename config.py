@@ -113,6 +113,9 @@ class Config:
         "BASE": float(os.getenv("PRICE_BASE"))
     }
 
+    CODE_PROMO_LIVRAISON = os.getenv("CODE_PROMO_LIVRAISON")
+    VILLES_CIBLEES_LIVRAISON = os.getenv("VILLES_CIBLEES_LIVRAISON")
+
     # ==========================================================
     # 🔹 Log de vérification au démarrage
     # ==========================================================

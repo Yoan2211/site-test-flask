@@ -1,0 +1,112 @@
+{
+    "resource": "order",
+    "id": "ord_gGndeEDXztNwAMmBbvgGJ",
+    "profileId": "pfl_AhYqE7RZFn",
+    "method": "twint",
+    "amount": {
+        "value": "7.80",
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "isCancelable": false,
+    "metadata": {
+        "compressed": true,
+        "encoding": "base85",
+        "alg": "zlib",
+        "data": "c-n1`QA)%x5QeW(=DF;qX?GLzDyRqWZIv=<#u9Clnx?3f9>{ZeF;jP0c0mZq@PGfz{F%WAL!q_?6mZ5hGKu@D<dxwJcLfttikH16BFP{J8>t^b9cE~J=R<08-iF!-bS<rXonwsVtSE{Gg{UMNiBvJvbVFiS@=~n69+O|Cx81g0Q%7<0I<$#6>{oDq6tjWC=$*sPjz8ZC`ypEIQiK`Mm^#vD1Qo+XIW*H4eSea`;72-7E?scN>drbU&W?W|KSEe?c#mJ8iW~x=LETY(-hY6{<frR^naYk+v+Y{Ia}ML%l*XO@n3hE!u>&PGGKb08SP#KA^d~H<ebSeX%et9DAlIZoaQkov%P*GplCA"
+    },
+    "createdAt": "2025-11-08T11:04:17+00:00",
+    "mode": "test",
+    "locale": "fr_CH",
+    "billingAddress": {
+        "streetAndNumber": "fessfe 5",
+        "postalCode": "1400",
+        "city": "Suchy",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoan.auberson@unil.ch"
+    },
+    "shopperCountryMustMatchBillingCountry": false,
+    "orderNumber": "202ba08a64324d20a5107887f6beee80",
+    "shippingAddress": {
+        "streetAndNumber": "fessfe 5",
+        "postalCode": "1400",
+        "city": "Suchy",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoan.auberson@unil.ch"
+    },
+    "amountCaptured": {
+        "value": "7.80",
+        "currency": "CHF"
+    },
+    "paidAt": "2025-11-08T11:04:23+00:00",
+    "redirectUrl": "http://unbilleted-fumingly-aundrea.ngrok-free.dev/payment/success?o=202ba08a64324d20a5107887f6beee80",
+    "webhookUrl": "https://unbilleted-fumingly-aundrea.ngrok-free.dev/webhook",
+    "lines": [
+        {
+            "resource": "orderline",
+            "id": "odl_btNuoZCiUyVTEfmBbvgGJ",
+            "orderId": "ord_gGndeEDXztNwAMmBbvgGJ",
+            "name": "Gobelet personnalisé",
+            "sku": "gobelet",
+            "type": "physical",
+            "status": "paid",
+            "metadata": {
+                "options_json": "{\"activity_id\": null, \"add_results\": false, \"add_route\": false, \"add_text\": true, \"custom_text\": \"dawdaw\\ndaw\", \"custom_text_line1\": \"dawdaw\", \"custom_text_line2\": \"daw\", \"from_strava\": false, \"results\": null, \"route_local\": null, \"route_url\": null}"
+            },
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "7.80",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "7.80",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-11-08T11:04:17+00:00"
+        }
+    ],
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/orders/ord_gGndeEDXztNwAMmBbvgGJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19359006/orders/ord_gGndeEDXztNwAMmBbvgGJ",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-order",
+            "type": "text/html"
+        }
+    }
+}

@@ -35,7 +35,7 @@ import polyline
 
 # Mollie SDK
 from mollie.api.client import Client
-from routes.mollie import get_cart_items, cart_total
+from routes.mollie import get_cart_items, cart_total, get_npa_livraison_off
 from models.db_database import db, User, BillingInfo, Order, OrderPhoto, Stock
 
 
@@ -77,6 +77,10 @@ ALLOWED_ROUTE_EXT = app.config["ALLOWED_ROUTE_EXT"]
 
 # Prix
 PRICES = app.config["PRICES"]
+CODE_PROMO_LIVRAISON = app.config["CODE_PROMO_LIVRAISON"]
+VILLES_CIBLEES_LIVRAISON = app.config["VILLES_CIBLEES_LIVRAISON"]
+# Charger les villes depuis .env pour affichage dans le panier
+zones_eligibles = [v.strip() for v in VILLES_CIBLEES_LIVRAISON.split(",") if v.strip()]
 
 SESSION_TIMEOUT_MINUTES = app.config["SESSION_TIMEOUT_MINUTES"] 
 
@@ -305,12 +309,33 @@ def gobelet():
         stock=stock,
     )
 
+@app.post("/apply-promo")
+def apply_promo():
+    promo = request.form.get("promo_code", "").strip()
+
+    # 🔒 Autoriser uniquement "LivraisonOFF"
+    if promo.lower() == CODE_PROMO_LIVRAISON.lower():
+        session["promo_code"] = CODE_PROMO_LIVRAISON
+        flash("✅ Code promo « LivraisonOFF » ajouté. Il sera validé selon votre adresse lors du paiement.", "success")
+    else:
+        # ❌ Ne rien enregistrer en session si faux
+        session.pop("promo_code", None)
+        flash("❌ Code promo inconnu ou non valide.", "error")
+
+    return redirect(url_for("cart_view"))
+
+
 @app.route("/cart")
 def cart_view():
     items = get_cart_items()
     subtotal = cart_total()
     shipping = 5.90 if items else 0.0
+    promo_code = session.get("promo_code", "").strip().lower()
+    if promo_code == "livraisonoff":
+        shipping = 0.0
+
     total = subtotal + shipping
+
     billing_data = session.get("billing_data")
 
     # ✅ Convertit les options en texte lisible
@@ -318,13 +343,16 @@ def cart_view():
         item["readable_options"] = readable_options(item.get("options", {}))
 
     return render_template(
-        "cart.html",
-        items=items,
-        subtotal=subtotal,
-        shipping=shipping,
-        total=total,
-        billing_data=billing_data
-    )
+    "cart.html",
+    items=items,
+    subtotal=subtotal,
+    shipping=shipping,
+    total=total,
+    billing_data=billing_data,
+    promo_code=promo_code,
+    zones_eligibles=zones_eligibles
+)
+
 
 
 def readable_options(raw_options):

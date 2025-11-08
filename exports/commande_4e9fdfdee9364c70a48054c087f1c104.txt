@@ -1,0 +1,112 @@
+{
+    "resource": "order",
+    "id": "ord_8G2gfeQHuPnVef5jotgGJ",
+    "profileId": "pfl_AhYqE7RZFn",
+    "method": "twint",
+    "amount": {
+        "value": "7.80",
+        "currency": "CHF"
+    },
+    "status": "paid",
+    "isCancelable": false,
+    "metadata": {
+        "compressed": true,
+        "encoding": "base85",
+        "alg": "zlib",
+        "data": "c-mEtK~BRk6hyBQ{k2t+#wD(|NWcNuRVezge<Fip2ggxCQ4Yj8xEM}bRqe{wyqWnkgAbZQZ8S*Wv~P8*iT33qS5=N&<U6i%QMH9Cat;hkq<#c>m_d2#Lkc->LhS>(j#j?*D8wz5YKu*|<6NMqnzkzUShS*Sb8+hFG5KYByNAv<WGQYwhAt6@{R&>rVm441y>n>I`1hNzAENOtO_%|-t|NU%kTFceKuu%x{Y8SKMty`kwYJ7lab*jGulNJ9U=Rp3HkRsZ{Q=%mg6{8UGCN1#8H}G(YPxJsccPDIK~@{VU~(qbLokX?!m`?@=GJlhS5pY&R9XU0ug|dj1LQb`HU"
+    },
+    "createdAt": "2025-11-08T10:46:55+00:00",
+    "mode": "test",
+    "locale": "fr_CH",
+    "billingAddress": {
+        "streetAndNumber": "fessfe 5",
+        "postalCode": "1400",
+        "city": "Suchy",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoan.auberson@unil.ch"
+    },
+    "shopperCountryMustMatchBillingCountry": false,
+    "orderNumber": "4e9fdfdee9364c70a48054c087f1c104",
+    "shippingAddress": {
+        "streetAndNumber": "fessfe 5",
+        "postalCode": "1400",
+        "city": "Suchy",
+        "region": "VD",
+        "country": "CH",
+        "givenName": "Yoan",
+        "familyName": "Auberson",
+        "email": "yoan.auberson@unil.ch"
+    },
+    "amountCaptured": {
+        "value": "7.80",
+        "currency": "CHF"
+    },
+    "paidAt": "2025-11-08T10:47:01+00:00",
+    "redirectUrl": "http://unbilleted-fumingly-aundrea.ngrok-free.dev/payment/success?o=4e9fdfdee9364c70a48054c087f1c104",
+    "webhookUrl": "https://unbilleted-fumingly-aundrea.ngrok-free.dev/webhook",
+    "lines": [
+        {
+            "resource": "orderline",
+            "id": "odl_bwP2F7MxXGS2dy5jotgGJ",
+            "orderId": "ord_8G2gfeQHuPnVef5jotgGJ",
+            "name": "Gobelet personnalisé",
+            "sku": "gobelet",
+            "type": "physical",
+            "status": "paid",
+            "metadata": {
+                "options_json": "{\"activity_id\": null, \"add_results\": false, \"add_route\": false, \"add_text\": true, \"custom_text\": \"wdadw\", \"custom_text_line1\": \"wdadw\", \"custom_text_line2\": \"\", \"from_strava\": false, \"results\": null, \"route_local\": null, \"route_url\": null}"
+            },
+            "isCancelable": false,
+            "quantity": 1,
+            "quantityShipped": 0,
+            "amountShipped": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityRefunded": 0,
+            "amountRefunded": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "quantityCanceled": 0,
+            "amountCanceled": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "shippableQuantity": 1,
+            "refundableQuantity": 1,
+            "cancelableQuantity": 0,
+            "unitPrice": {
+                "value": "7.80",
+                "currency": "CHF"
+            },
+            "vatRate": "0.00",
+            "vatAmount": {
+                "value": "0.00",
+                "currency": "CHF"
+            },
+            "totalAmount": {
+                "value": "7.80",
+                "currency": "CHF"
+            },
+            "createdAt": "2025-11-08T10:46:55+00:00"
+        }
+    ],
+    "_links": {
+        "self": {
+            "href": "https://api.mollie.com/v2/orders/ord_8G2gfeQHuPnVef5jotgGJ",
+            "type": "application/hal+json"
+        },
+        "dashboard": {
+            "href": "https://my.mollie.com/dashboard/org_19359006/orders/ord_8G2gfeQHuPnVef5jotgGJ",
+            "type": "text/html"
+        },
+        "documentation": {
+            "href": "https://docs.mollie.com/reference/get-order",
+            "type": "text/html"
+        }
+    }
+}

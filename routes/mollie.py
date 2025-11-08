@@ -96,6 +96,61 @@ def get_canton(postal_code):
 # Charger la base au démarrage du module
 load_postal_cantons()
 
+def get_npa_livraison_off():
+    """Retourne les NPA autorisés pour le code promo LivraisonOFF."""
+    import os, csv
+    from flask import current_app
+
+    # ✅ Chemin vers le CSV
+    path = os.path.join(os.path.dirname(__file__), "..", "static", "data", "postal_codes.csv")
+    npa_autorises = set()
+
+    # ✅ Chargement des villes depuis .env
+    raw_villes = current_app.config.get("VILLES_CIBLEES_LIVRAISON", "")
+    villes_ciblees = set(v.strip() for v in raw_villes.split(",") if v.strip())
+    villes_ciblees_normalisees = {v.lower() for v in villes_ciblees}
+
+    print(f"✅ Villes ciblées chargées depuis .env : {sorted(villes_ciblees)}")
+
+    # ✅ Lecture du fichier CSV
+    if not os.path.exists(path):
+        print(f"❌ Fichier postal_codes.csv introuvable : {path}")
+        return set()
+
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            # Lecture flexible (auto-détection du séparateur)
+            sample = f.read(2048)
+            f.seek(0)
+            dialect = csv.Sniffer().sniff(sample, delimiters=";\t,")
+            reader = csv.DictReader(f, dialect=dialect)
+
+            print(f"🧾 Colonnes détectées : {reader.fieldnames}")
+
+            for row in reader:
+                ville = (
+                    row.get("Ortschaftsname")
+                    or row.get("\ufeffOrtschaftsname")  # fallback BOM
+                    or ""
+                ).strip()
+                plz = (row.get("PLZ") or "").strip()
+
+                # Nettoyage des noms de villes
+                ville_nettoyee = ville.lower().replace(" (vd)", "").replace(" (fr)", "")
+                if ville_nettoyee in villes_ciblees_normalisees:
+                    print(f"✅ Match trouvé : {ville} → {plz}")
+                    npa_autorises.add(plz)
+
+    except Exception as e:
+        print(f"❌ Erreur lecture CSV pour LivraisonOFF : {e}")
+        return set()
+
+    print(f"✅ NPA valides pour LivraisonOFF : {sorted(npa_autorises)}")
+    return npa_autorises
+
+
+
+
 
 @mollie_bp.route("/checkout", methods=["GET", "POST"])
 def checkout():
@@ -148,6 +203,16 @@ def checkout():
                 self.country = data.get("billing_country")
 
         billing_info = TempBilling(billing_data)
+    
+    # 💡 Appliquer code promo si autorisé
+    promo_code = session.get("promo_code", "").strip().lower()
+    npa_client = str(getattr(billing_info, "postal_code", "")).strip()
+    shipping_fee = 5.90  # par défaut
+
+    if promo_code.lower() == current_app.config.get("CODE_PROMO_LIVRAISON", "").lower() and npa_client in get_npa_livraison_off():
+        shipping_fee = 0.0
+
+    total = subtotal + shipping_fee
 
     # 🧾 Conversion des données pour Mollie
     billing_data_mollie = {
@@ -280,16 +345,18 @@ def checkout():
             }
             order_payload["lines"].append(line)
 
-    # 🚚 Frais de livraison
-    order_payload["lines"].append({
-        "name": "Frais de livraison",
-        "type": "shipping_fee",
-        "quantity": 1,
-        "unitPrice": {"currency": "CHF", "value": f"{shipping_fee:.2f}"},
-        "totalAmount": {"currency": "CHF", "value": f"{shipping_fee:.2f}"},
-        "vatRate": "0.00",
-        "vatAmount": {"currency": "CHF", "value": "0.00"},
-    })
+    # 🚚 Frais de livraison (seulement si > 0)
+    if shipping_fee > 0:
+        order_payload["lines"].append({
+            "name": "Frais de livraison",
+            "type": "shipping_fee",
+            "quantity": 1,
+            "unitPrice": {"currency": "CHF", "value": f"{shipping_fee:.2f}"},
+            "totalAmount": {"currency": "CHF", "value": f"{shipping_fee:.2f}"},
+            "vatRate": "0.00",
+            "vatAmount": {"currency": "CHF", "value": "0.00"},
+        })
+
 
     # 💾 Création en base avant Mollie
     try:
@@ -402,13 +469,30 @@ def checkout_info():
             billing_data["billing_canton"] = canton
             print(f"📍 Code postal {billing_data['billing_postal']} → canton détecté : {canton}")
 
-
-
         # Vérifie que l'adresse contient au moins une lettre et un chiffre
         address = billing_data["billing_address"]
         if not re.search(r"[A-Za-zÀ-ÿ]", address) or not re.search(r"\d", address):
             flash("L'adresse doit contenir à la fois du texte et un numéro de bâtiment (ex. Rue du Lac 12).", "error")
             return redirect(url_for("mollie.checkout_info"))
+
+        # ➕ Vérifie la validité du code promo
+        promo_code = session.get("promo_code", "").strip().lower()
+        npa = billing_data.get("billing_postal", "").strip()
+
+        if promo_code.lower() == current_app.config.get("CODE_PROMO_LIVRAISON", "").lower():
+            print(f"🔍 Vérification du code promo livraisonoff pour NPA {npa}")
+            print(f"✅ NPA autorisés : {sorted(get_npa_livraison_off())}")
+
+            if npa not in get_npa_livraison_off():
+                flash(
+                    "🚫 Le code promo « livraisonoff » n’est valable que dans certaines localités autour d’Yverdon. "
+                    "Il a été supprimé car votre adresse n’est pas éligible.",
+                    "error"
+                )
+                session.pop("promo_code", None)
+                return redirect(url_for("cart_view"))
+            else:
+                print(f"✅ Code promo validé pour NPA {npa}")
 
 
         if user:

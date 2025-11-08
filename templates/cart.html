@@ -58,17 +58,46 @@
     <!-- 🧮 Décompte total -->
     <div class="card-light" style="margin-top: 2rem; padding: 1.5rem;">
         <p>Sous-total : <strong>CHF {{ "%.2f"|format(subtotal) }}</strong></p>
-        <p>Frais de livraison : <strong>CHF {{ "%.2f"|format(shipping) }}</strong></p>
+        <p>
+            Frais de livraison :
+            {% if session.promo_code and session.promo_code.strip().lower() == "livraisonoff" %}
+            <span style="text-decoration: line-through; color: #999;">CHF 5.90</span>
+            → <strong style="color: #00cc66;">CHF 0.00</strong>
+            <span style="color: #ffaa00;">(code « LivraisonOFF » en attente de validation)</span>
+            {% else %}
+            <strong>CHF {{ "%.2f"|format(shipping) }}</strong>
+            {% endif %}
+        </p>
+
+
+
         <hr style="border: 1px solid #444;">
         <p style="font-size: 1.2rem;">💰 Total à payer : <strong style="color: #ff6600;">CHF {{ "%.2f"|format(total) }}</strong></p>
     </div>
+
+    <form action="{{ url_for('apply_promo') }}" method="post" style="margin-top: 1rem;">
+        <label for="promo_code" style="color: #ccc;">🎁 Code promo :</label>
+        <input type="text" id="promo_code" name="promo_code" placeholder="ex: LivraisonOFF">
+        <button type="submit" class="btn" style="margin-left: 0.5rem;">Appliquer</button>
+    </form>
 
     <!-- 🚚 Info livraison -->
     <div class="card-light" style="margin-top: 1rem; padding: 1rem; background-color: #1a1a1a; border-left: 4px solid #ff6600;">
         <p style="margin: 0; color: #ccc;">
             🚚 <strong>Livraison :</strong> effectuée par nos soins <em>en main propre</em> entre <strong>5 à 10 jours</strong> dès la réception du paiement.
+            {% if zones_eligibles %}
+            <br>
+            📍 Livraison offerte avec le code <strong>« LivraisonOFF »</strong> disponible uniquement dans :
+            <span style="color: #fff;">{{ zones_eligibles | join(", ") }}</span>.
+            {% endif %}
+            {% if promo_code == 'livraisonoff' %}
+            <br>
+            ⏳ <em>Note :</em> Les livraisons avec code promo peuvent prendre légèrement plus de temps.
+            {% endif %}
         </p>
     </div>
+
+
 
     <div class="d-flex justify-content-between align-items-center" style="margin-top: 1.5rem;">
         <div class="cart-actions" style="display: flex; gap: 1rem;">
@@ -79,7 +108,7 @@
                 <button type="submit" class="btn" style="background-color: #444;">↩️ Poursuivre mes achats</button>
             </form>
             <form action="{{ url_for('mollie.checkout_info') }}" method="post">
-                <button type="submit" class="btn">Procéder au paiement</button>
+                <button type="submit" class="btn">Procéder au paiement/Informations de paiement</button>
             </form>
         </div>
     </div>
